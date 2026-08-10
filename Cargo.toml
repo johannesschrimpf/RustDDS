@@ -1,6 +1,6 @@
 [package]
 name = "rustdds"
-version = "0.14.0" 
+version = "0.14.1"
 authors = ["Juhana Helovuo <juhana.helovuo@atostek.com>",
   "Oiva Moisio <oiva.moisio@atostek.com>",
   "Miska Melkinen <miska.melkinen@atostek.com>",
@@ -72,7 +72,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_repr="0.1"
 byteorder = { version = "1.3", features = ["i128"] }
 rand = "0.9.0"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.35", features = ["serde"] }
 enumflags2 = { version = "0.7.7", features = ["serde"] }
 pastey = "0.2"
 md5 = "0.8.0"
@@ -83,7 +83,8 @@ thiserror = "2.0.9"
 # cdr-encoding = { path = "../cdr-encoding", version="0.11" }
 cdr-encoding = { version="0.11" }
 cdr-encoding-size = { version="^0.5" }
-futures = "0.3"
+futures = "0.3.28"
+
 # Cross-platform network-interface enumeration (index, IPv4 subnet, MTU,
 # loopback/multicast flags) used for per-peer path-MTU resolution and locator
 # selection. `default-features = false` drops the `gateway` feature (default

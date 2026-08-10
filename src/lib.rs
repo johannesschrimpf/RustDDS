@@ -236,6 +236,14 @@ pub use structure::{
 pub use cdr_encoding_size;
 /// Re-export CDR encoder/decoder
 pub use cdr_encoding;
+/// Re-export of the `mio` (v0.6) crate. RustDDS DataReaders/DataWriters
+/// implement its [`Evented`](mio::Evented) trait for synchronous polling.
+/// Downstream crates (e.g. `ros2-client`) that register RustDDS entities with a
+/// `mio` `Poll` should import `mio` through this re-export, guaranteeing they
+/// build against the exact same `mio` version as RustDDS.
+pub use mio_06 as mio;
+/// Re-export of the `bytes` crate, used in RustDDS's (de)serialization API.
+pub use bytes;
 
 /// Components used to access NO_KEY Topics
 pub mod no_key {
