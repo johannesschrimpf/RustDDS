@@ -145,6 +145,10 @@ The DDS specification specifies manual memory management in the sense that many 
 * Ownership QoS: match on kind (SHARED/EXCLUSIVE), ignoring strength
 * Decouple reliable send window from History depth, so a reliable `KeepLast` writer no longer stop-and-waits
 
+### Version 0.14.2
+* Silence some false alarm log messages
+* Dependency upgrade
+
 ## Version 0.13.0
 * Several interoperability fixes and improvements
 * Rewrite timer usage to limit number of background threads used to four per DomainParticipant
