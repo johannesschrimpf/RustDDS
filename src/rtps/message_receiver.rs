@@ -622,7 +622,7 @@ impl MessageReceiver {
     let target_reader = if let Some(target_reader) = target_reader {
       target_reader
     } else {
-      return error!("No reader matching the CryptoHandle found");
+      return debug!("No matching reader found for entity id {target_reader_entity_id:?}");
     };
 
     match submessage {
@@ -954,7 +954,10 @@ impl MessageReceiver {
               }){
                 self.handle_writer_submessage(target_reader.entity_id(), decoded_writer_submessage);
               }else{
-                error!("No reader matching the CryptoHandle found");
+                debug!(
+                  "No matching reader found for writer submessage from {sending_writer_entity_id:?} \
+                   (receiver entity id is UNKNOWN)"
+                );
               }
             } else {
               let receiver_guid = GUID {
