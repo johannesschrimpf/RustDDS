@@ -341,6 +341,12 @@ impl DPEventLoop {
     let mut ev_wrapper = self;
     let mut preparing_to_stop = false;
 
+    // Endpoint removals are collected here during an event batch and applied
+    // only after the whole batch has been dispatched. See the REMOVE_*_TOKEN
+    // handlers for the reason.
+    let mut readers_to_remove: Vec<GUID> = Vec::new();
+    let mut writers_to_remove: Vec<GUID> = Vec::new();
+
     // loop starts here
     loop {
       // nonblocking-transmit: on platforms without write-readiness registration
@@ -425,10 +431,10 @@ impl DPEventLoop {
                 }
               }
               ADD_READER_TOKEN | REMOVE_READER_TOKEN => {
-                ev_wrapper.handle_reader_action(&event);
+                ev_wrapper.handle_reader_action(&event, &mut readers_to_remove);
               }
               ADD_WRITER_TOKEN | REMOVE_WRITER_TOKEN => {
-                ev_wrapper.handle_writer_action(&event);
+                ev_wrapper.handle_writer_action(&event, &mut writers_to_remove);
               }
               ACKNACK_MESSAGE_TO_LOCAL_WRITER_TOKEN => {
                 ev_wrapper.handle_writer_acknack_action(&event);
@@ -543,18 +549,18 @@ impl DPEventLoop {
               if eid.kind().is_reader() {
                 ev_wrapper.message_receiver.reader_mut(eid).map_or_else(
                   || {
-                    if !preparing_to_stop {
-                      error!("Event for unknown reader {eid:?}");
-                    }
+                    // Harmless: Entity tokens exist only for endpoints we have
+                    // registered, so a lookup miss means the reader was already
+                    // removed before this event got dispatched.
+                    debug!("Command event for unknown reader {eid:?}");
                   },
                   Reader::process_command,
                 );
               } else if eid.kind().is_writer() {
                 let (blocked, local_readers) = match ev_wrapper.writers.get_mut(&eid) {
                   None => {
-                    if !preparing_to_stop {
-                      error!("Event for unknown writer {eid:?}");
-                    };
+                    // Harmless, for the same reason as an unknown reader above.
+                    debug!("Command event for unknown writer {eid:?}");
                     (BTreeSet::new(), vec![])
                   }
                   Some(writer) => {
@@ -588,6 +594,16 @@ impl DPEventLoop {
             }
           }
         } // for
+
+        // Apply the endpoint removals that were deferred during this batch. The
+        // batch may have contained command events for these endpoints, and those
+        // were dispatched above while the endpoints were still present.
+        for reader_guid in readers_to_remove.drain(..) {
+          ev_wrapper.remove_local_reader(reader_guid);
+        }
+        for writer_guid in writers_to_remove.drain(..) {
+          ev_wrapper.remove_local_writer(&writer_guid);
+        }
       } // if
 
       // nonblocking-transmit: service the per-socket outbound queues and keep
@@ -704,7 +720,7 @@ impl DPEventLoop {
       .unwrap_or_else(|e| error!("Cannot report participant status: {e:?}"));
   }
 
-  fn handle_reader_action(&mut self, event: &Event) {
+  fn handle_reader_action(&mut self, event: &Event, pending_removals: &mut Vec<GUID>) {
     match event.token() {
       ADD_READER_TOKEN => {
         trace!("add reader(s)");
@@ -717,15 +733,19 @@ impl DPEventLoop {
         }
       }
       REMOVE_READER_TOKEN => {
+        // Only collect here. Dropping a DataReader both signals the removal and
+        // wakes its command channel, so the current event batch may still hold a
+        // command event for this reader. Removing it immediately would turn that
+        // event into a spurious "unknown reader" lookup miss.
         while let Ok(old_reader_guid) = self.remove_reader_receiver.receiver.try_recv() {
-          self.remove_local_reader(old_reader_guid);
+          pending_removals.push(old_reader_guid);
         }
       }
       _ => {}
     }
   }
 
-  fn handle_writer_action(&mut self, event: &Event) {
+  fn handle_writer_action(&mut self, event: &Event, pending_removals: &mut Vec<GUID>) {
     match event.token() {
       ADD_WRITER_TOKEN => {
         while let Ok(new_writer_ingredients) = self.add_writer_receiver.receiver.try_recv() {
@@ -737,8 +757,9 @@ impl DPEventLoop {
         }
       }
       REMOVE_WRITER_TOKEN => {
-        while let Ok(writer_guid) = &self.remove_writer_receiver.receiver.try_recv() {
-          self.remove_local_writer(writer_guid);
+        // Deferred for the same reason as reader removals above.
+        while let Ok(writer_guid) = self.remove_writer_receiver.receiver.try_recv() {
+          pending_removals.push(writer_guid);
         }
       }
       other => error!("Expected writer action token, got {other:?}"),
