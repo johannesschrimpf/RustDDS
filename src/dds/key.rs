@@ -3,7 +3,7 @@
 use std::hash::Hash;
 
 use byteorder::BigEndian;
-use rand::Rng;
+use rand::RngExt;
 use log::error;
 use serde::{Deserialize, Serialize};
 pub use cdr_encoding_size::*;
