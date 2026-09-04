@@ -34,7 +34,7 @@ use crate::{
   },
   discovery::{
     discovery::{Discovery, DiscoveryCommand},
-    discovery_db::DiscoveryDB,
+    discovery_db::{discovery_db_read, DiscoveryDB},
     sedp_messages::{DiscoveredReaderData, DiscoveredTopicData, DiscoveredWriterData},
   },
   network::{constant::*, udp_listener::UDPListener},
@@ -531,7 +531,12 @@ impl DomainParticipant {
   /// }
   /// ```
   pub fn discovered_topics(&self) -> Vec<DiscoveredTopicData> {
-    self.dpi.lock().unwrap().discovered_topics()
+    // Clone the Discovery DB handle under `dpi`, then release `dpi` before
+    // reading the DB. These locks are not held together, so waiting for the
+    // DB does not block other participant calls that only need `dpi`.
+    let db = self.discovery_db();
+    let db = discovery_db_read(&db);
+    db.all_user_topics().cloned().collect()
   }
 
   /// Gets a snapshot of all Readers discovered over the DDS network.
@@ -553,7 +558,12 @@ impl DomainParticipant {
   /// }
   /// ```
   pub fn discovered_readers(&self) -> Vec<DiscoveredReaderData> {
-    self.dpi.lock().unwrap().discovered_readers()
+    // Clone the Discovery DB handle under `dpi`, then release `dpi` before
+    // reading the DB. These locks are not held together, so waiting for the
+    // DB does not block other participant calls that only need `dpi`.
+    let db = self.discovery_db();
+    let db = discovery_db_read(&db);
+    db.get_all_external_topic_readers().cloned().collect()
   }
 
   /// Gets a snapshot of all Writers discovered over the DDS network.
@@ -575,7 +585,12 @@ impl DomainParticipant {
   /// }
   /// ```
   pub fn discovered_writers(&self) -> Vec<DiscoveredWriterData> {
-    self.dpi.lock().unwrap().discovered_writers()
+    // Clone the Discovery DB handle under `dpi`, then release `dpi` before
+    // reading the DB. These locks are not held together, so waiting for the
+    // DB does not block other participant calls that only need `dpi`.
+    let db = self.discovery_db();
+    let db = discovery_db_read(&db);
+    db.get_all_external_topic_writers().cloned().collect()
   }
 
   /// Manually asserts liveliness, affecting all writers with
@@ -990,18 +1005,6 @@ impl DomainParticipantDisc {
 
   pub fn participant_id(&self) -> u16 {
     self.dpi.participant_id()
-  }
-
-  pub fn discovered_topics(&self) -> Vec<DiscoveredTopicData> {
-    self.dpi.discovered_topics()
-  }
-
-  pub fn discovered_readers(&self) -> Vec<DiscoveredReaderData> {
-    self.dpi.discovered_readers()
-  }
-
-  pub fn discovered_writers(&self) -> Vec<DiscoveredWriterData> {
-    self.dpi.discovered_writers()
   }
 
   pub(crate) fn dds_cache(&self) -> Arc<RwLock<DDSCache>> {
@@ -1596,30 +1599,6 @@ impl DomainParticipantInner {
 
   pub fn participant_id(&self) -> u16 {
     self.domain_info.participant_id
-  }
-
-  pub fn discovered_topics(&self) -> Vec<DiscoveredTopicData> {
-    let db = self.discovery_db.read().unwrap_or_else(|e| {
-      panic!("RustDDS internal bug: DiscoveryDB is poisoned after a prior panic: {e:?}")
-    });
-
-    db.all_user_topics().cloned().collect()
-  }
-
-  pub fn discovered_readers(&self) -> Vec<DiscoveredReaderData> {
-    let db = self.discovery_db.read().unwrap_or_else(|e| {
-      panic!("RustDDS internal bug: DiscoveryDB is poisoned after a prior panic: {e:?}")
-    });
-
-    db.get_all_external_topic_readers().cloned().collect()
-  }
-
-  pub fn discovered_writers(&self) -> Vec<DiscoveredWriterData> {
-    let db = self.discovery_db.read().unwrap_or_else(|e| {
-      panic!("RustDDS internal bug: DiscoveryDB is poisoned after a prior panic: {e:?}")
-    });
-
-    db.get_all_external_topic_writers().cloned().collect()
   }
 
   pub(crate) fn status_channel_receiver(
