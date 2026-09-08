@@ -22,7 +22,9 @@
 //! `dpi` and waited for `discovery_db.read()`.
 //!
 //! Endpoint creation and the three snapshot accessors now avoid holding the
-//! two locks together.
+//! two locks together. `find_topic()` still nests `dpi` -> `discovery_db`, so
+//! it is also exercised to detect the reverse order returning in endpoint
+//! creation, even if the snapshot accessors remain fixed.
 //!
 //! Because a deadlocked pair would wedge the libtest harness forever, the
 //! racing threads run in a *child process*: this same test binary re-executed
@@ -59,10 +61,12 @@ const RACE_TEST_NAME: &str = "endpoint_creation_races_discovery_accessors";
 const CHILD_DEADLINE: Duration = Duration::from_secs(30);
 /// Threads that create endpoints.
 const CREATOR_THREADS: usize = 2;
-/// Threads that poll discovery snapshots.
+/// Threads that poll snapshots and call `find_topic()`.
 const ACCESSOR_THREADS: usize = 2;
 /// Writer + reader pairs created per creator thread.
 const ENDPOINTS_PER_CREATOR: usize = 150;
+/// An existing topic lets `find_topic()` return without polling for discovery.
+const QUERY_TOPIC_NAME: &str = "lock_order_query_topic";
 
 fn test_qos() -> QosPolicies {
   QosPolicyBuilder::new()
@@ -90,6 +94,24 @@ fn run_race() {
 
   let qos = test_qos();
   let dp = DomainParticipant::new(domain_id).expect("failed to create DomainParticipant");
+
+  // A live writer registers this topic in DiscoveryDB and keeps it available
+  // throughout the race. Looking it up exercises the nested locks without
+  // holding `dpi` while waiting for an unknown topic to be discovered.
+  let query_topic = dp
+    .create_topic(
+      QUERY_TOPIC_NAME.to_string(),
+      "Sample".to_string(),
+      &qos,
+      TopicKind::NoKey,
+    )
+    .expect("failed to create query Topic");
+  let query_publisher = dp
+    .create_publisher(&qos)
+    .expect("failed to create query Publisher");
+  let _query_writer = query_publisher
+    .create_datawriter_no_key_cdr::<Sample>(&query_topic, None)
+    .expect("failed to create query DataWriter");
 
   // Counts the creator threads that have finished, so the accessor threads know
   // when to stop. Start only after all workers have completed their setup;
@@ -148,6 +170,13 @@ fn run_race() {
         std::hint::black_box(dp.discovered_readers());
         std::hint::black_box(dp.discovered_writers());
         std::hint::black_box(dp.discovered_topics());
+        let found = dp
+          .find_topic(QUERY_TOPIC_NAME, Duration::from_millis(100))
+          .expect("find_topic failed");
+        assert!(
+          found.is_some(),
+          "the query topic should remain discoverable"
+        );
 
         if creators_done.load(Ordering::SeqCst) == CREATOR_THREADS {
           break;
@@ -208,7 +237,8 @@ fn endpoint_creation_races_discovery_accessors() {
       let _ = child.wait();
       panic!(
         "The racing child process (domain {domain_id}) did not finish within {} s and was killed. \
-         Possible lock-order deadlock between endpoint creation and discovery snapshots.",
+         Possible lock-order deadlock between endpoint creation and discovery accessors, \
+         including `find_topic()` (`dpi` -> `discovery_db`).",
         CHILD_DEADLINE.as_secs()
       )
     }
@@ -255,4 +285,44 @@ fn single_thread_create_writer_then_query_discovery() {
       .map(|t| t.topic_data.name.clone())
       .collect::<Vec<_>>()
   );
+}
+
+/// The notification receiver must remain usable after both a timeout and a
+/// successful lookup. A fresh Poll per call leaves the receiver registered
+/// with the old Poll and makes subsequent lookups fail.
+#[test]
+fn find_topic_can_be_reused_after_timeout_and_success() {
+  let dp =
+    DomainParticipant::new(scratch_domain_id(180, 10)).expect("failed to create participant");
+  let qos = test_qos();
+  let name = "lock_order_reusable_find_topic";
+
+  for _ in 0..2 {
+    assert!(dp
+      .find_topic(name, Duration::from_millis(10))
+      .expect("lookup of a missing topic failed")
+      .is_none());
+  }
+
+  let topic = dp
+    .create_topic(
+      name.to_string(),
+      "Sample".to_string(),
+      &qos,
+      TopicKind::NoKey,
+    )
+    .expect("failed to create Topic");
+  let publisher = dp
+    .create_publisher(&qos)
+    .expect("failed to create Publisher");
+  let _writer = publisher
+    .create_datawriter_no_key_cdr::<Sample>(&topic, None)
+    .expect("failed to create DataWriter");
+
+  for _ in 0..2 {
+    assert!(dp
+      .find_topic(name, Duration::from_millis(100))
+      .expect("lookup of an existing topic failed")
+      .is_some());
+  }
 }
