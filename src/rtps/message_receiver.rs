@@ -303,7 +303,8 @@ impl MessageReceiver {
       .record(source_prefix, origin.local_if, source);
   }
 
-  // This is also called directly from dp_event_loop in case of loopback messages.
+  // This is also called directly from dp_event_loop in case of loopback
+  // messages.
   pub fn handle_parsed_message(&mut self, rtps_message: Message) {
     self.reset();
     self.dest_guid_prefix = self.own_guid_prefix;
@@ -317,15 +318,16 @@ impl MessageReceiver {
     #[cfg(feature = "security")]
     let decoded_message = match &self.security_plugins {
       None => {
-        self.must_be_rtps_protection_special_case = false; // No plugins, no protection
+        self.must_be_rtps_protection_special_case = false; // No plugins, no
+                                                           // protection
         rtps_message
       }
 
       Some(security_plugins_handle) => {
         let security_plugins = security_plugins_handle.get_plugins();
 
-        // If the first submessage is SecureRTPSPrefix, the message has to be decoded
-        // using the cryptographic plugin
+        // If the first submessage is SecureRTPSPrefix, the message has to be
+        // decoded using the cryptographic plugin
         if let Some(Submessage {
           body: SubmessageBody::Security(SecuritySubmessage::SecureRTPSPrefix(..)),
           ..
@@ -333,7 +335,8 @@ impl MessageReceiver {
         {
           match security_plugins.decode_rtps_message(rtps_message, &self.source_guid_prefix) {
             Ok(DecodeOutcome::Success(message)) => {
-              self.must_be_rtps_protection_special_case = false; // Message was protected
+              self.must_be_rtps_protection_special_case = false; // Message was
+                                                                 // protected
               message
             }
             Ok(DecodeOutcome::KeysNotFound(header_key_id)) => {
@@ -357,7 +360,8 @@ impl MessageReceiver {
           }
         } else {
           if security_plugins.rtps_not_protected(&self.dest_guid_prefix) {
-            // The domain is not rtps-protected, the additional check does not apply
+            // The domain is not rtps-protected, the additional check does not
+            // apply
             self.must_be_rtps_protection_special_case = false;
           } else {
             // The messages in a rtps-protected domain are expected to start
@@ -393,9 +397,10 @@ impl MessageReceiver {
             let security_plugins_clone = self.security_plugins.clone();
             let receiver_entity_id = submessage.receiver_entity_id();
 
-            // For writer submessages, if the receiver entity ID is unknown, we have to try
-            // to give it to all matched readers. When security is enabled, we do this for
-            // topics that have no submessage protection
+            // For writer submessages, if the receiver entity ID is unknown, we
+            // have to try to give it to all matched readers. When
+            // security is enabled, we do this for topics that have
+            // no submessage protection
             if receiver_entity_id == EntityId::UNKNOWN {
               let sending_writer_entity_id = submessage.sender_entity_id();
 
@@ -527,8 +532,9 @@ impl MessageReceiver {
                   warn!("SecurePostfix submessage out of sequence. Discarding.");
                 }
                 SecuritySubmessage::SecureRTPSPrefix(..) => {
-                  // DDS Security spec Section "7.3.6.6.3 Validity" requires that this is the
-                  // first submessage in a message, in which case it has been taken care of by
+                  // DDS Security spec Section "7.3.6.6.3 Validity" requires
+                  // that this is the first submessage in a
+                  // message, in which case it has been taken care of by
                   // decode_rtps_message
                   warn!(
                     "SecureRTPSPrefix is only allowed at the start of the message, now received \
@@ -861,8 +867,8 @@ impl MessageReceiver {
 
     match submessage {
       ReaderSubmessage::AckNack(acknack, _) => {
-        // Note: This must not block, because the receiving end is the same thread,
-        // i.e. blocking here is an instant deadlock.
+        // Note: This must not block, because the receiving end is the same
+        // thread, i.e. blocking here is an instant deadlock.
         match self
           .acknack_sender
           .try_send((self.source_guid_prefix, AckSubmessage::AckNack(acknack)))
@@ -878,8 +884,8 @@ impl MessageReceiver {
       ReaderSubmessage::NackFrag(nackfrag, _) => {
         // Forward the fragment retransmission request to the target writer, the
         // same way AckNack is forwarded. The writer handles it via
-        // `AckSubmessage::NackFrag` (scheduling repair-fragment sends). Must not
-        // block: the receiving end is on this same thread.
+        // `AckSubmessage::NackFrag` (scheduling repair-fragment sends). Must
+        // not block: the receiving end is on this same thread.
         match self
           .acknack_sender
           .try_send((self.source_guid_prefix, AckSubmessage::NackFrag(nackfrag)))
@@ -908,7 +914,8 @@ impl MessageReceiver {
       }
       Some(ref security_plugins_handle) => {
         // Call 8.5.1.9.6 Operation: preprocess_secure_submsg to determine what
-        // the submessage contains and then proceed to decode and process accordingly.
+        // the submessage contains and then proceed to decode and process
+        // accordingly.
 
         let decode_result = security_plugins_handle.get_plugins().decode_submessage(
           (
@@ -928,8 +935,8 @@ impl MessageReceiver {
           ))) => {
             let receiver_entity_id = decoded_writer_submessage.receiver_entity_id();
 
-            // If the receiver entity ID is unknown, we try to find the correct id based on
-            // whether it matches the crypto handle
+            // If the receiver entity ID is unknown, we try to find the correct
+            // id based on whether it matches the crypto handle
             if receiver_entity_id == EntityId::UNKNOWN {
               let sending_writer_entity_id = decoded_writer_submessage.sender_entity_id();
 
@@ -999,8 +1006,9 @@ impl MessageReceiver {
             }
           }
           Ok(DecodeOutcome::Success(DecodedSubmessage::Interpreter(interpreter_submessage))) => {
-            // This is not defined in the specification, but we accept for compatibility, as
-            // we would also accept unprotected ones.
+            // This is not defined in the specification, but we accept for
+            // compatibility, as we would also accept unprotected
+            // ones.
             self.handle_interpreter_submessage(interpreter_submessage);
           }
           Ok(DecodeOutcome::KeysNotFound(header_key_id)) => {
@@ -1173,7 +1181,8 @@ mod tests {
       0x5b, 0x00, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00,
     ]);
 
-    // The message bytes contain the following guid prefix as the message target.
+    // The message bytes contain the following guid prefix as the message
+    // target.
     let target_gui_prefix = GuidPrefix::new(&[
       0x01, 0x03, 0x00, 0x0c, 0x29, 0x2d, 0x31, 0xa2, 0x28, 0x20, 0x02, 0x08,
     ]);
@@ -1262,7 +1271,8 @@ mod tests {
     // Verify the message reader has recorded the right amount of submessages
     assert_eq!(message_receiver.submessage_count, 4);
 
-    // This is not correct way to read history cache values but it serves as a test
+    // This is not correct way to read history cache values but it serves as a
+    // test
     let sequence_numbers =
       message_receiver.get_reader_history_cache_start_and_end_seq_num(reader_guid.entity_id);
     info!("history change sequence number range: {sequence_numbers:?}");

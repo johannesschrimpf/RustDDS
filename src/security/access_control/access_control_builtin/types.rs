@@ -278,7 +278,8 @@ impl From<BuiltinPermissionsToken> for PermissionsToken {
 }
 
 const PERMISSIONS_CREDENTIAL_TOKEN_CLASS_ID: &str = "DDS:Access:PermissionsCredential";
-const PERMISSIONS_CREDENTIAL_TOKEN_DOCUMENT_NAME: &str = "dds.perm.cert"; // Why is this cert, if the property contains the permissions document
+// Why is this cert, if the property contains the permissions document
+const PERMISSIONS_CREDENTIAL_TOKEN_DOCUMENT_NAME: &str = "dds.perm.cert";
 
 // 9.4.2.1
 pub(in crate::security) struct BuiltinPermissionsCredentialToken {

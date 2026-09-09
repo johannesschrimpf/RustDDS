@@ -220,8 +220,9 @@ fn main() {
       };
 
       // rate == 0 means "flat out": publish as fast as possible with no
-      // per-sample pacing timer (mirrors CycloneDDS `ddsperf pub` with no rate).
-      // This is what the max-throughput / traffic-pressure scenarios use.
+      // per-sample pacing timer (mirrors CycloneDDS `ddsperf pub` with no
+      // rate). This is what the max-throughput / traffic-pressure
+      // scenarios use.
       let flat_out = rate == 0;
       smol::block_on(async {
         let mut seq = 0;

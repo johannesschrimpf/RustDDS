@@ -83,8 +83,8 @@ pub struct SpdpDiscoveredParticipantData {
 impl SpdpDiscoveredParticipantData {
   #[cfg(feature = "security")]
   pub(crate) fn supports_security(&self) -> bool {
-    // TODO: Is this logic correct? Or maybe we could come up with a more accurate
-    // version?
+    // TODO: Is this logic correct? Or maybe we could come up with a more
+    // accurate version?
     self.identity_token.is_some()
       && self.permissions_token.is_some()
       && self.property.is_some()
@@ -607,8 +607,9 @@ mod tests {
           let mut participant_data_2: SpdpDiscoveredParticipantData =
             PlCdrDeserializerAdapter::from_bytes(&sdata, RepresentationIdentifier::PL_CDR_LE)
               .unwrap();
-          // force timestamps to be the same, as these are not serialized/deserialized,
-          // but stamped during deserialization
+          // force timestamps to be the same, as these are not
+          // serialized/deserialized, but stamped during
+          // deserialization
           participant_data_2.updated_time = participant_data.updated_time;
 
           eprintln!("again deserialized = {:?}", participant_data_2);

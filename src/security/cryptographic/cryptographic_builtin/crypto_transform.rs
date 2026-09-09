@@ -590,7 +590,8 @@ impl CryptoTransform for CryptographicBuiltin {
           ..
         } = encoded_submessage
         {
-          // Check receiver-specific MACS and filter the list of endpoints by them
+          // Check receiver-specific MACS and filter the list of endpoints by
+          // them
           let sending_endpoint_infos = matching_decode_materials
             .iter()
             .filter_map(|(decode_materials, sending_endpoint_info)| {
@@ -627,7 +628,8 @@ impl CryptoTransform for CryptographicBuiltin {
           ..
         } = encoded_submessage
         {
-          // Check receiver-specific MACS and filter the list of endpoints by them
+          // Check receiver-specific MACS and filter the list of endpoints by
+          // them
           let sending_endpoint_infos = matching_decode_materials
             .iter()
             .filter_map(|(decode_materials, sending_endpoint_info)| {
@@ -772,9 +774,9 @@ impl CryptoTransform for CryptographicBuiltin {
     //
     // We can detect which one it is from CryptoHeader contents.
     // splitting to the three parts has to be done by byte offset, because
-    // SerializedPayload does not have a length marker, but both header and footer
-    // have a fixed length. Footer is not allowed to have receiver specific MACs
-    // here, which makes its size fixed.
+    // SerializedPayload does not have a length marker, but both header and
+    // footer have a fixed length. Footer is not allowed to have receiver
+    // specific MACs here, which makes its size fixed.
 
     let head_len = BuiltinCryptoHeader::serialized_len();
     let foot_len = BuiltinCryptoFooter::minimal_serialized_len();

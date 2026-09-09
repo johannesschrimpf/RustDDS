@@ -22,8 +22,8 @@ use crate::{
 /// of the SampleInfo sample_state".
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[bitflags]
-#[repr(u32)] // DDS Spec 1.4 section 2.3.3 DCPS PSM : IDL defines these as "unsigned long",
-             // so u32
+#[repr(u32)] // DDS Spec 1.4 section 2.3.3 DCPS PSM : IDL defines these as
+             // "unsigned long", so u32
 pub enum SampleState {
   /// > indicates that the DataReader has already accessed that sample by means
   /// of `read()` ... or corresponding iterator.

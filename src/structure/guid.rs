@@ -35,8 +35,8 @@ impl GuidPrefix {
     let mut bytes: [u8; 12] = rand::random(); // start with random data
 
     // The prefix is arbitrary, but let's place our vendor id at the head
-    // for easy recognition. It seems some other RTPS implementations are doing the
-    // same.
+    // for easy recognition. It seems some other RTPS implementations are doing
+    // the same.
     let my_vendor_id_bytes = crate::messages::vendor_id::VendorId::THIS_IMPLEMENTATION.as_bytes();
     bytes[0] = my_vendor_id_bytes[0];
     bytes[1] = my_vendor_id_bytes[1];
@@ -60,7 +60,8 @@ impl AsRef<[u8]> for GuidPrefix {
 }
 
 impl fmt::Debug for GuidPrefix {
-  // This is so common that we skip all the introductions and just print the data.
+  // This is so common that we skip all the introductions and just print the
+  // data.
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     for b in self.bytes.iter() {
       write!(f, "{b:02x}")?;

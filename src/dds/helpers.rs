@@ -26,7 +26,8 @@ pub fn try_send_timeout<T>(
         match sender.try_send(mt) {
           Ok(()) => return Ok(()),
           Err(TrySendError::Full(tt)) => {
-            thread::sleep(std::time::Duration::from_nanos(delay as u64)); // and try again
+            // and try again
+            thread::sleep(std::time::Duration::from_nanos(delay as u64));
             mt = tt;
             time_left -= delay;
             delay *= 2;

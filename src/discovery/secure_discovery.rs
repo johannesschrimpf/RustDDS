@@ -163,7 +163,8 @@ impl SecureDiscovery {
         create_security_error_and_log!("Failed to get ParticipantSecurityAttributes: {}", e)
       })?;
 
-    drop(plugins); // Drop plugins so that register_remote_to_crypto can use them
+    drop(plugins); // Drop plugins so that register_remote_to_crypto can use
+                   // them
 
     // Register local participant as remote to the crypto.
     // This is needed so that we can receive our own secured messages.
@@ -320,8 +321,8 @@ impl SecureDiscovery {
             .local_dp_sec_attributes
             .allow_unauthenticated_participants
           {
-            // But configuration still allows matching with the participant (in a limited
-            // way)
+            // But configuration still allows matching with the participant (in
+            // a limited way)
             security_info!(
               "Remote participant has incompatible Security, but matching with it anyways, since \
                configuration allows this. Remote guid: {:?}",
@@ -341,8 +342,8 @@ impl SecureDiscovery {
       }
       Some(AuthenticationStatus::Authenticating) => {
         // We are authenticating.
-        // If we need to send this remote participant a handshake request but haven't
-        // managed to do so, retry
+        // If we need to send this remote participant a handshake request but
+        // haven't managed to do so, retry
         if let Some(DiscHandshakeState::PendingRequestSend) = self.get_handshake_state(&guid_prefix)
         {
           self.try_sending_new_handshake_request_message(
@@ -365,9 +366,9 @@ impl SecureDiscovery {
     discovery_db_write(discovery_db).update_authentication_status(guid_prefix, updated_auth_status);
 
     // Decide if normal Discovery can process the participant message
-    // If authentication has begun with the remote, we should have already notified
-    // DP event loop of it. So allow normal discovery to process the message only
-    // if the remote is Unauthenticated
+    // If authentication has begun with the remote, we should have already
+    // notified DP event loop of it. So allow normal discovery to process
+    // the message only if the remote is Unauthenticated
     if updated_auth_status == AuthenticationStatus::Unauthenticated {
       NormalDiscoveryPermission::Allow
     } else {
@@ -386,11 +387,12 @@ impl SecureDiscovery {
 
     let db = discovery_db_read(discovery_db);
 
-    // Permission to process the message depends on the participant's authentication
-    // status
+    // Permission to process the message depends on the participant's
+    // authentication status
     match db.get_authentication_status(guid_prefix) {
       None => {
-        // No prior info on this participant. Let the dispose message be processed
+        // No prior info on this participant. Let the dispose message be
+        // processed
         NormalDiscoveryPermission::Allow
       }
       Some(AuthenticationStatus::Unauthenticated) => {
@@ -449,7 +451,8 @@ impl SecureDiscovery {
     };
 
     if topic_sec_attributes.is_discovery_protected {
-      // Message should come from DCPSSubscriptionsSecure topic. Ignore this one.
+      // Message should come from DCPSSubscriptionsSecure topic. Ignore this
+      // one.
       security_info!(
         "Received a non-secure DCPSSubscription message for topic {topic_name} whose discovery is \
          protected. Ignoring message. Participant: {:?}",
@@ -465,8 +468,9 @@ impl SecureDiscovery {
         // Participant wants to subscribe to the topic
         match auth_status {
           Some(AuthenticationStatus::Unauthenticated) => {
-            // Section 8.8.7.1 "AccessControl behavior with discovered endpoints from
-            // “Unauthenticated” DomainParticipant" from the spec
+            // Section 8.8.7.1 "AccessControl behavior with discovered endpoints
+            // from “Unauthenticated” DomainParticipant" from the
+            // spec
             if topic_sec_attributes.is_read_protected {
               security_info!(
                 "Unauthenticated participant {:?} attempted to read protected topic {topic_name}. \
@@ -484,8 +488,8 @@ impl SecureDiscovery {
             }
           }
           Some(AuthenticationStatus::Authenticated) => {
-            // Section 8.8.7.2 "AccessControl behavior with discovered endpoints from
-            // “Authenticated” DomainParticipant" from the spec
+            // Section 8.8.7.2 "AccessControl behavior with discovered endpoints
+            // from “Authenticated” DomainParticipant" from the spec
             if topic_sec_attributes.is_read_protected {
               // We need to check from access control
               match self
@@ -637,8 +641,9 @@ impl SecureDiscovery {
         // Participant wants to publish to the topic
         match auth_status {
           Some(AuthenticationStatus::Unauthenticated) => {
-            // Section 8.8.7.1 "AccessControl behavior with discovered endpoints from
-            // “Unauthenticated” DomainParticipant" from the spec
+            // Section 8.8.7.1 "AccessControl behavior with discovered endpoints
+            // from “Unauthenticated” DomainParticipant" from the
+            // spec
             if topic_sec_attributes.is_write_protected {
               security_info!(
                 "Unauthenticated participant {:?} attempted to publish to protected topic \
@@ -656,8 +661,8 @@ impl SecureDiscovery {
             }
           }
           Some(AuthenticationStatus::Authenticated) => {
-            // Section 8.8.7.2 "AccessControl behavior with discovered endpoints from
-            // “Authenticated” DomainParticipant" from the spec
+            // Section 8.8.7.2 "AccessControl behavior with discovered endpoints
+            // from “Authenticated” DomainParticipant" from the spec
             if topic_sec_attributes.is_write_protected {
               // We need to check from access control
               match self
@@ -816,7 +821,8 @@ impl SecureDiscovery {
     discovery_db: &Arc<RwLock<DiscoveryDB>>,
     _discovery_updated_sender: &mio_channel::SyncSender<DiscoveryNotificationType>,
   ) -> NormalDiscoveryPermission {
-    // First check that the participant is authenticated (should be at this point)
+    // First check that the participant is authenticated (should be at this
+    // point)
     let guidp = match ds {
       with_key::Sample::Value(data) => data.participant_data.participant_guid.prefix,
       with_key::Sample::Dispose(pguid) => pguid.0.prefix,
@@ -865,8 +871,8 @@ impl SecureDiscovery {
     secure_sub_writer: &DataWriterPlCdr<SubscriptionBuiltinTopicDataSecure>,
     local_user_reader: &DiscoveredReaderData,
   ) {
-    // See if this subscription needs to be written to DCPSSubscriptionsSecure or
-    // the normal one
+    // See if this subscription needs to be written to DCPSSubscriptionsSecure
+    // or the normal one
     let do_secure_write =
       if let Some(sec_info) = local_user_reader.subscription_topic_data.security_info() {
         let sec_attributes = EndpointSecurityAttributes::from(sec_info.clone());
@@ -908,8 +914,8 @@ impl SecureDiscovery {
     secure_pub_writer: &DataWriterPlCdr<PublicationBuiltinTopicDataSecure>,
     local_user_writer: &DiscoveredWriterData,
   ) {
-    // See if this publication needs to be written to DCPSPublicationsSecure or the
-    // normal one
+    // See if this publication needs to be written to DCPSPublicationsSecure or
+    // the normal one
     let do_secure_write =
       if let Some(sec_info) = local_user_writer.publication_topic_data.security_info() {
         let sec_attributes = EndpointSecurityAttributes::from(sec_info.clone());
@@ -991,8 +997,8 @@ impl SecureDiscovery {
       }
     };
 
-    // Check that the participant is authenticated (should be since the sample came
-    // from a secured topic)
+    // Check that the participant is authenticated (should be since the sample
+    // came from a secured topic)
     let auth_status = discovery_db_read(discovery_db).get_authentication_status(participant_guidp);
     if auth_status != Some(AuthenticationStatus::Authenticated) {
       security_warn!(
@@ -1114,8 +1120,8 @@ impl SecureDiscovery {
       }
     };
 
-    // Check that the participant is authenticated (should be since the sample came
-    // from a secured topic)
+    // Check that the participant is authenticated (should be since the sample
+    // came from a secured topic)
     let auth_status = discovery_db_read(discovery_db).get_authentication_status(participant_guidp);
     if auth_status != Some(AuthenticationStatus::Authenticated) {
       security_warn!(
@@ -1201,8 +1207,8 @@ impl SecureDiscovery {
   ) -> bool {
     // 1. Check identity tokens
     if let Some(token) = remote_data.identity_token.as_ref() {
-      // Class ID of identity tokens needs to be the same (Means they implement the
-      // same authentication plugin)
+      // Class ID of identity tokens needs to be the same (Means they implement
+      // the same authentication plugin)
       let my_class_id = self.local_dp_identity_token.class_id();
       let remote_class_id = token.class_id();
 
@@ -1221,8 +1227,8 @@ impl SecureDiscovery {
 
     // 2. Check permission tokens
     if let Some(token) = remote_data.permissions_token.as_ref() {
-      // Class ID of permission tokens needs to be the same (Means they implement the
-      // same access control plugin)
+      // Class ID of permission tokens needs to be the same (Means they
+      // implement the same access control plugin)
       let my_class_id = self.local_dp_permissions_token.class_id();
       let remote_class_id = token.class_id();
 
@@ -1264,12 +1270,13 @@ impl SecureDiscovery {
         }
       } else {
         // But also from the spec:
-        // "If the is_valid is set to zero on either of the masks, the comparison
-        // between the local and remote setting for the ParticipantSecurityInfo
-        // shall ignore the attribute"
+        // "If the is_valid is set to zero on either of the masks, the
+        // comparison between the local and remote setting for the
+        // ParticipantSecurityInfo shall ignore the attribute"
 
-        // TODO: Does it actually make sense to ignore the masks if they're not valid?
-        // Seems a bit strange. Currently we require that all masks are valid
+        // TODO: Does it actually make sense to ignore the masks if they're not
+        // valid? Seems a bit strange. Currently we require that all
+        // masks are valid
         info!(
           "Participants not compatible because some ParticipantSecurityInfo masks are not valid"
         );
@@ -1285,8 +1292,8 @@ impl SecureDiscovery {
     true
   }
 
-  // This function is called once we have discovered a new remote participant that
-  // we're compatible with Security-wise.
+  // This function is called once we have discovered a new remote participant
+  // that we're compatible with Security-wise.
   // It contains the first authentication steps described in section 8.8.2
   // "Authentication behavior with discovered DomainParticipant" of the Security
   // specification.
@@ -1333,7 +1340,8 @@ impl SecureDiscovery {
           remote_guid.prefix,
           e.msg
         );
-        // See if we can treat the participant as Unauthenticated or should we reject it
+        // See if we can treat the participant as Unauthenticated or should we
+        // reject it
         if self
           .local_dp_sec_attributes
           .allow_unauthenticated_participants
@@ -1356,8 +1364,8 @@ impl SecureDiscovery {
       remote_guid.prefix
     );
 
-    // Add remote participant to DiscoveryDB with status 'Authenticating' and notify
-    // DP event loop. This will result in matching the builtin
+    // Add remote participant to DiscoveryDB with status 'Authenticating' and
+    // notify DP event loop. This will result in matching the builtin
     // ParticipantStatelessMessage endpoints, which are used for exchanging
     // authentication messages.
     discovery_db_write(discovery_db).update_participant(participant_data);
@@ -1509,8 +1517,8 @@ impl SecureDiscovery {
   ) {
     // First resend authentication messages
     for (guid_prefix, stored_message) in self.stored_authentication_messages.iter_mut() {
-      // Resend the message unless it's a final message (which needs to be requested
-      // from us)
+      // Resend the message unless it's a final message (which needs to be
+      // requested from us)
       if self.handshake_states.get(guid_prefix)
         != Some(&DiscHandshakeState::CompletedWithFinalMessageSent)
       {
@@ -1827,8 +1835,8 @@ impl SecureDiscovery {
           "Validating handshake reply message failed. Error: {e}. Remote guid prefix: \
            {remote_guid_prefix:?}"
         );
-        // Reset stored message resend counter, so our resends can't be depleted by
-        // sending us incorrect messages
+        // Reset stored message resend counter, so our resends can't be depleted
+        // by sending us incorrect messages
         self.reset_stored_message_resend_counter(&remote_guid_prefix);
       }
     }
@@ -1906,8 +1914,8 @@ impl SecureDiscovery {
           "Validating final handshake message failed. Error: {e}. Remote guid prefix: \
            {remote_guid_prefix:?}"
         );
-        // Reset stored message resend counter, so our resends can't be depleted by
-        // sending us incorrect messages
+        // Reset stored message resend counter, so our resends can't be depleted
+        // by sending us incorrect messages
         self.reset_stored_message_resend_counter(&remote_guid_prefix);
       }
     }
@@ -1980,8 +1988,8 @@ impl SecureDiscovery {
              Error message: {e}",
             msg.generic.source_endpoint_guid
           );
-          // We need to set the crypto tokens later (after we have registered the remote
-          // writer)
+          // We need to set the crypto tokens later (after we have registered
+          // the remote writer)
           self.store_received_volatile_message(msg.clone());
         } else {
           info!(
@@ -2009,8 +2017,8 @@ impl SecureDiscovery {
              Error message: {e}",
             msg.generic.source_endpoint_guid
           );
-          // We need to set the crypto tokens later (after we have registered the remote
-          // reader)
+          // We need to set the crypto tokens later (after we have registered
+          // the remote reader)
           self.store_received_volatile_message(msg.clone());
         } else {
           info!(
@@ -2143,10 +2151,10 @@ impl SecureDiscovery {
 
   // Initiates the exchange of cryptographic keys with the remote participant.
   // The exchange is started for the secure built-in topics.
-  // Note that this function needs to be called after the built-in endpoints have
-  // been matched in dp_event_loop, since otherwise the key exchange messages that
-  // we send (in topic ParticipantVolatileMessageSecure) won't reach the remote
-  // participant.
+  // Note that this function needs to be called after the built-in endpoints
+  // have been matched in dp_event_loop, since otherwise the key exchange
+  // messages that we send (in topic ParticipantVolatileMessageSecure) won't
+  // reach the remote participant.
   pub fn start_key_exchange_with_remote_participant(
     &mut self,
     remote_guid_prefix: GuidPrefix,
@@ -2328,8 +2336,8 @@ impl SecureDiscovery {
     }
 
     // Check if we have stored keys which the remote has sent for this
-    // (local, remote) endpoint pair. This happens if we have received keys from the
-    // remote before we have registered the remote endpoint
+    // (local, remote) endpoint pair. This happens if we have received keys from
+    // the remote before we have registered the remote endpoint
     if let Some(msg) = self
       .cached_received_key_exchange_messages
       .get(&(local_endpoint_guid, remote_endpoint_guid))
@@ -2406,9 +2414,9 @@ impl SecureDiscovery {
     let need_to_send_keys = if remote_is_writer {
       // Our local endpoint is a reader
       // According the spec section 8.8.9.3, only is_submessage_protected should
-      // matter when we're the reader. However, at least FastDDS expects to receive
-      // DataReader keys also when only payload is protected. So we'll send keys
-      // also on this case.
+      // matter when we're the reader. However, at least FastDDS expects to
+      // receive DataReader keys also when only payload is protected. So
+      // we'll send keys also on this case.
       sec_attr.is_payload_protected || sec_attr.is_submessage_protected
     } else {
       // Our local endpoint is a writer
@@ -2553,8 +2561,8 @@ impl SecureDiscovery {
     key_exchange_writer: &no_key::DataWriter<ParticipantVolatileMessageSecure>,
     message: &ParticipantVolatileMessageSecure,
   ) -> Result<(), String> {
-    // The key exchange message is meant only for the remote participant specified
-    // in the message.
+    // The key exchange message is meant only for the remote participant
+    // specified in the message.
     // It's critical to get the remote guid in WriteOptions
     // right, since otherwise secret keys will be sent to some other
     // participant.

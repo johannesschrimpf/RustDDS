@@ -19,8 +19,8 @@ fn compute_receiver_specific_macs(
   SecurityResult::from_iter(receiver_specific_key_materials.iter().map(
     // Destructure
     |ReceiverSpecificKeyMaterial { key_id, key }| {
-      // The receiver-specific MAC is computed for common_mac, not the ciphertext.
-      // See 9.5.3.3.4
+      // The receiver-specific MAC is computed for common_mac, not the
+      // ciphertext. See 9.5.3.3.4
       compute_mac(key, initialization_vector, &common_mac)
         // Combine with id
         .map(|receiver_mac| ReceiverSpecificMAC {

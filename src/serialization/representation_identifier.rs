@@ -55,8 +55,8 @@ impl RepresentationIdentifier {
   };
 
   // The following are from
-  // "Extensible and Dynamic Topic Types for DDS" (DDS X-Types v 1.2) spec, Table
-  // 60, Section 7.6.2.1.2 Use of the RTPS Encapsulation Identifier
+  // "Extensible and Dynamic Topic Types for DDS" (DDS X-Types v 1.2) spec,
+  // Table 60, Section 7.6.2.1.2 Use of the RTPS Encapsulation Identifier
 
   // Table says "CDR2_BE", but that name is already taken.
   pub const XCDR2_BE: Self = Self {

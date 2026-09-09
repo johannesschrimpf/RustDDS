@@ -579,8 +579,9 @@ impl SecurityPlugins {
     reader_data: &DiscoveredReaderData,
   ) -> SecurityResult<(bool, bool)> {
     let handle = self.get_permissions_handle(&participant_guidp)?;
-    // Convert normal DiscoveredReaderData to SubscriptionBuiltinTopicDataSecure,
-    // which is what Access control plugin expects
+    // Convert normal DiscoveredReaderData to
+    // SubscriptionBuiltinTopicDataSecure, which is what Access control
+    // plugin expects
     let secure_sub_data = SubscriptionBuiltinTopicDataSecure::from(reader_data.clone());
     self
       .access
@@ -1152,9 +1153,9 @@ impl SecurityPlugins {
   // This function checks if a message corresponds with this special case.
   //
   // NOTE! Relies on the assumption that in DCPSParticipantVolatileMessageSecure
-  // the CryptoTransformIdentifier has transformation_key_id=0 like it does in the
-  // builtin plugin. If a custom plugin that does not adhere to this is used, this
-  // check needs to also be modified.
+  // the CryptoTransformIdentifier has transformation_key_id=0 like it does in
+  // the builtin plugin. If a custom plugin that does not adhere to this is
+  // used, this check needs to also be modified.
   fn is_rtps_protection_special_case(
     Message { submessages, .. }: &Message,
   ) -> SecurityResult<bool> {
@@ -1242,8 +1243,8 @@ impl SecurityPlugins {
     )
   }
 
-  // Currently only those RTPS messages whose destination is the local participant
-  // can be decoded.
+  // Currently only those RTPS messages whose destination is the local
+  // participant can be decoded.
   // TODO: add support for other destinations as well?
   pub fn decode_rtps_message(
     &self,

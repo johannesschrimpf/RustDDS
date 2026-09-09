@@ -171,8 +171,9 @@ impl WriterSendBuffer {
     }
 
     if !shared.reliable_writer || !inner.reliable_readers_present {
-      // Best-effort and "no reliable reader yet" writers have no acknowledgement
-      // window to wait on; the backlog limit above is their only throttle.
+      // Best-effort and "no reliable reader yet" writers have no
+      // acknowledgement window to wait on; the backlog limit above is
+      // their only throttle.
       return true;
     }
     // Number of unacknowledged samples in [acked_before, last_seq].
@@ -272,21 +273,24 @@ impl WriterSendBuffer {
     inner.last_seq = seq;
 
     // KeepLast "newest wins" bound. Applied on insert for:
-    //  - non-blocking best-effort writes: never throttled at admission (`has_room`
-    //    returns true), and the only other eviction path is the periodic
-    //    cache-cleaning timer, which starves under a sustained flood -- so without
-    //    this the buffer grows without bound (confirmed multi-GB leak);
-    //  - reliable writers with NO matched reliable reader yet: there is nobody to
-    //    repair to, so retaining unacknowledged samples is pointless. A reliable
-    //    writer that produces flat-out before discovery completes (discovery is
-    //    CPU-starved under load and can lag ~1 s) would otherwise race thousands of
-    //    samples ahead, and when the reader finally matches it faces a huge
-    //    unacknowledged backlog that must be recovered via repair at the slow (100
-    //    ms) heartbeat cadence -- collapsing reliable throughput. Trimming to
-    //    KeepLast here keeps only the recent samples (correct for volatile
-    //    durability); once a reliable reader matches, `reliable_readers_present`
-    //    flips true and we retain everything again for repair.
-    // Built-in (discovery) writers are always exempt to never lose discovery data.
+    //  - non-blocking best-effort writes: never throttled at admission
+    //    (`has_room` returns true), and the only other eviction path is the
+    //    periodic cache-cleaning timer, which starves under a sustained flood
+    //    -- so without this the buffer grows without bound (confirmed multi-GB
+    //    leak);
+    //  - reliable writers with NO matched reliable reader yet: there is nobody
+    //    to repair to, so retaining unacknowledged samples is pointless. A
+    //    reliable writer that produces flat-out before discovery completes
+    //    (discovery is CPU-starved under load and can lag ~1 s) would otherwise
+    //    race thousands of samples ahead, and when the reader finally matches
+    //    it faces a huge unacknowledged backlog that must be recovered via
+    //    repair at the slow (100 ms) heartbeat cadence -- collapsing reliable
+    //    throughput. Trimming to KeepLast here keeps only the recent samples
+    //    (correct for volatile durability); once a reliable reader matches,
+    //    `reliable_readers_present` flips true and we retain everything again
+    //    for repair.
+    // Built-in (discovery) writers are always exempt to never lose discovery
+    // data.
     let trim_keep_last = !shared.is_builtin
       && (!may_block
         || (shared.reliable_writer && shared.volatile && !inner.reliable_readers_present));
@@ -484,7 +488,8 @@ mod tests {
     // Nothing sent yet: backlog fills after two admissions.
     assert!(admit_now(&buf, may_block_opts())); // seq 1
     assert!(admit_now(&buf, may_block_opts())); // seq 2
-    assert!(!admit_now(&buf, may_block_opts())); // backlog full (2 unsent, limit 2)
+    assert!(!admit_now(&buf, may_block_opts())); // backlog full (2 unsent,
+                                                 // limit 2)
 
     // The Writer transmits seq 1; backlog drops to 1, room opens for one more.
     buf.set_sent_frontier(SequenceNumber::new(1));
@@ -571,8 +576,8 @@ mod tests {
     assert!(buf.get_by_sn(SequenceNumber::new(1)).is_none());
   }
 
-  // A durable (non-VOLATILE) reliable writer must NOT drop on insert even before
-  // a reader matches: it retains samples for late-joining readers. The
+  // A durable (non-VOLATILE) reliable writer must NOT drop on insert even
+  // before a reader matches: it retains samples for late-joining readers. The
   // `max_retain` bound does not apply to it.
   #[test]
   fn durable_reliable_writer_not_trimmed_before_match() {
@@ -596,10 +601,10 @@ mod tests {
     assert_eq!(buf.retained_len(), 10);
   }
 
-  // A VOLATILE reliable writer with no matched reliable reader trims KeepLast on
-  // insert: there is no late joiner to serve, so retaining unacknowledged samples
-  // is pointless and would create a huge post-match repair backlog (the reliable
-  // flat-out throughput fix). Once a reliable reader matches
+  // A VOLATILE reliable writer with no matched reliable reader trims KeepLast
+  // on insert: there is no late joiner to serve, so retaining unacknowledged
+  // samples is pointless and would create a huge post-match repair backlog
+  // (the reliable flat-out throughput fix). Once a reliable reader matches
   // (`set_acked_frontier(Some(..))`), trimming stops and everything is retained
   // for repair.
   #[test]

@@ -137,9 +137,9 @@ impl RtpsReaderProxy {
         self.multicast_locator_list, update.multicast_locator_list
       );
       // The incoming proxy may carry loopback either inline (built-in path via
-      // `get_builtin_reader_proxy`) or already split into its bucket (discovered
-      // path). Recombine both before splitting so the invariant holds regardless
-      // of how `update` was constructed.
+      // `get_builtin_reader_proxy`) or already split into its bucket
+      // (discovered path). Recombine both before splitting so the
+      // invariant holds regardless of how `update` was constructed.
       let combined: Vec<Locator> = update
         .unicast_locator_list
         .iter()
@@ -205,7 +205,8 @@ impl RtpsReaderProxy {
   }
 
   pub fn from_reader(reader: &ReaderIngredients, domain_participant: &DomainParticipant) -> Self {
-    let mut self_locators = domain_participant.self_locators(); // This clones a map of locator lists.
+    // This clones a map of locator lists.
+    let mut self_locators = domain_participant.self_locators();
     let (unicast_token, multicast_token) = if reader.guid.entity_id.kind().is_user_defined() {
       (USER_TRAFFIC_LISTENER_TOKEN, USER_TRAFFIC_MUL_LISTENER_TOKEN)
     } else {
@@ -414,10 +415,11 @@ impl RtpsReaderProxy {
         //
         // This is logged in `writer` object.
 
-        // Ignore ACKNACK whose readerSNState.base claims ack beyond last_seq + 1 (the
-        // writer's last change sequence number). Matches reliable writer/reader
-        // semantics; a forged base would otherwise pin all_acked_before and
-        // block real ACKNACKs (issue #405).
+        // Ignore ACKNACK whose readerSNState.base claims ack beyond last_seq +
+        // 1 (the writer's last change sequence number). Matches
+        // reliable writer/reader semantics; a forged base would
+        // otherwise pin all_acked_before and block real ACKNACKs (issue
+        // #405).
         let max_plausible_acked_before = last_available.plus_1();
         if new_all_acked_before > max_plausible_acked_before {
           warn!(
@@ -498,10 +500,10 @@ impl RtpsReaderProxy {
     self.unsent_changes.insert(sequence_number);
 
     // Memory-safety backstop: never let this set grow without bound. In normal
-    // operation it is pruned as samples are pushed (see Writer::process_pending)
-    // or acknowledged (handle_ack_nack), but a best-effort flood sends no
-    // ACKNACKs, so cap the set and drop the oldest (least-useful-to-resend)
-    // entries if it ever exceeds the cap.
+    // operation it is pruned as samples are pushed (see
+    // Writer::process_pending) or acknowledged (handle_ack_nack), but a
+    // best-effort flood sends no ACKNACKs, so cap the set and drop the
+    // oldest (least-useful-to-resend) entries if it ever exceeds the cap.
     while self.unsent_changes.len() > MAX_UNSENT_CHANGES_PER_READER {
       if let Some(&oldest) = self.unsent_changes.iter().next() {
         self.unsent_changes.remove(&oldest);
@@ -539,7 +541,8 @@ impl RtpsReaderProxy {
     let req_set = self
       .frags_requested
       .entry(seq_num)
-      .or_insert_with(|| BitVec::with_capacity(64)); // default capacity out of hat
+      .or_insert_with(|| BitVec::with_capacity(64)); // default capacity out of
+                                                     // hat
 
     for f in frag_nums.iter() {
       // -1 because FragmentNumbers start at 1
@@ -673,8 +676,8 @@ mod bounded_unsent_tests {
     );
   }
 
-  // Regression / safety net: even if pruning never happened (pathological peer),
-  // the hard cap must keep unsent_changes bounded.
+  // Regression / safety net: even if pruning never happened (pathological
+  // peer), the hard cap must keep unsent_changes bounded.
   #[test]
   fn unsent_changes_bounded_by_hard_cap() {
     let mut rp = test_proxy();

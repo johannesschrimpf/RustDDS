@@ -30,8 +30,8 @@ impl Header {
 impl Validity for Header {
   fn valid(&self) -> bool {
     // Three validity rules from RTPS 2.3 spec section 8.3.6.3
-    // (1) We cannot reach this point if the message has too few bytes to contain a
-    // full header.
+    // (1) We cannot reach this point if the message has too few bytes to
+    // contain a full header.
     self.protocol_id == ProtocolId::PROTOCOL_RTPS // (2)
     && self.protocol_version.major <= ProtocolVersion::THIS_IMPLEMENTATION.major
     // (3)

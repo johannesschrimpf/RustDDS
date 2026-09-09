@@ -120,7 +120,8 @@ impl SignedDocument {
         "SignedData without signed attributes not implemented".to_owned(),
       )),
       Some(sas) => {
-        //println!("signed_attrs bytes={:02x?}\ndebug=\n{:?}",sas.to_der(), sas );
+        //println!("signed_attrs bytes={:02x?}\ndebug=\n{:?}",sas.to_der(), sas
+        // );
 
         // RFC 5652, Section 5.3.  SignerInfo Type:
         // "If the [signedAttrs] field is present, it MUST contain [...]
@@ -167,12 +168,12 @@ impl SignedDocument {
     }
 
     // Section 5.4:
-    // When the [signedAttrs] field is present, however, the result is the message
-    // digest of the complete DER encoding of the SignedAttrs value
+    // When the [signedAttrs] field is present, however, the result is the
+    // message digest of the complete DER encoding of the SignedAttrs value
     // contained in the signedAttrs field.
 
-    // TODO these oids appear when testing, but are they absolutely correct or can
-    // there be more corresponding to the same algorithm?
+    // TODO these oids appear when testing, but are they absolutely correct or
+    // can there be more corresponding to the same algorithm?
     const ECDSA_WITH_SHA256_OID: &str = "1.2.840.10045.4.3.2";
     const RSA_PKCS1: &str = "1.2.840.113549.1.1.1";
 
@@ -225,8 +226,8 @@ mod tests {
     // * Signing certificate cert.pem
     // * Private key of certificate cert.key.pem
     //
-    // openssl smime -sign -in example.xml -out example.p7s -signer cert.pem -inkey
-    // cert.key.pem -text
+    // openssl smime -sign -in example.xml -out example.p7s -signer cert.pem
+    // -inkey cert.key.pem -text
     //
     // The resulting example.p7s file is the signed "document".
 

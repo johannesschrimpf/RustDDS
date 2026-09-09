@@ -36,7 +36,8 @@ pub struct InfoSource {
 }
 
 impl InfoSource {
-  #[cfg(feature = "security")] // currently otherwise unused, clippy warns about this
+  #[cfg(feature = "security")] // currently otherwise unused, clippy warns about
+                               // this
   pub fn len_serialized(&self) -> usize {
     std::mem::size_of::<u32>()
       + std::mem::size_of::<ProtocolVersion>()

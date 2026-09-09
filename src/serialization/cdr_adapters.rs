@@ -47,13 +47,15 @@ where
       // The trait ByteOrder is sealed, so there are no implementations
       // outside the byteorder package, which defines only LittleEndian
       // and BigEndian impls.
-      // If you end up here, please explain how did you find a third implementation.
+      // If you end up here, please explain how did you find a third
+      // implementation.
       unreachable!()
     }
   }
 
   fn to_bytes(value: &D) -> Result<Bytes> {
-    let size_estimate = std::mem::size_of_val(value) * 2; // TODO: crude estimate
+    let size_estimate = std::mem::size_of_val(value) * 2; // TODO: crude
+                                                          // estimate
     let mut buffer: Vec<u8> = Vec::with_capacity(size_estimate);
     to_writer::<D, BO, &mut Vec<u8>>(&mut buffer, value)?;
     Ok(Bytes::from(buffer))
@@ -67,7 +69,8 @@ where
   BO: ByteOrder + 'static,
 {
   fn key_to_bytes(value: &D::K) -> Result<Bytes> {
-    let size_estimate = std::mem::size_of_val(value) * 2; // TODO: crude estimate
+    let size_estimate = std::mem::size_of_val(value) * 2; // TODO: crude
+                                                          // estimate
     let mut buffer: Vec<u8> = Vec::with_capacity(size_estimate);
     to_writer::<D::K, BO, &mut Vec<u8>>(&mut buffer, value)?;
     Ok(Bytes::from(buffer))

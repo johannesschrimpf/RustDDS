@@ -161,7 +161,8 @@ mod with_key {
   }
 }
 
-#[cfg(feature = "security")] // only used with security feature for now, this is to avoid warning
+#[cfg(feature = "security")] // only used with security feature for now, this is
+                             // to avoid warning
 mod no_key {
   use serde::{de::DeserializeOwned, Serialize};
 
@@ -295,7 +296,8 @@ pub(crate) struct Discovery {
 
 impl Discovery {
   const PARTICIPANT_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(2);
-  const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
+  // timer for cleaning up inactive topics
+  const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60);
   const SPDP_PUBLISH_PERIOD: StdDuration = StdDuration::from_secs(10);
   const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
   #[cfg(feature = "security")]
@@ -576,8 +578,8 @@ impl Discovery {
       EntityId::P2P_BUILTIN_PARTICIPANT_MESSAGE_SECURE_WRITER,
       None, // No timer. Periodic sending is done simultaneously with the non-secure topic
     );
-    // p2p Participant stateless message, used for authentication and Diffie-Hellman
-    // key exchange
+    // p2p Participant stateless message, used for authentication and
+    // Diffie-Hellman key exchange
     #[cfg(feature = "security")]
     let dcps_participant_stateless_message = construct_topic_and_poll!(
       CDR,
@@ -650,7 +652,8 @@ impl Discovery {
     }
 
     #[cfg(not(feature = "security"))]
-    let security_opt = security_plugins_opt.and(None); // = None, but avoid warning.
+    let security_opt = security_plugins_opt.and(None); // = None, but avoid
+                                                       // warning.
 
     #[cfg(feature = "security")]
     let security_opt = if let Some(plugins_handle) = security_plugins_opt {
@@ -707,9 +710,9 @@ impl Discovery {
   pub fn discovery_event_loop(&mut self) {
     self.initialize_participant();
 
-    // Send out info about user (=non-built-in) Writers and Readers that we have.
-    // We are just initializing local participant, so likely there are none yet,
-    // but better make sure.
+    // Send out info about user (=non-built-in) Writers and Readers that we
+    // have. We are just initializing local participant, so likely there are
+    // none yet, but better make sure.
     // TODO: Check if there can acually be any. If not, then this code is
     // unnecessary.
     let db = discovery_db_read(&self.discovery_db);
@@ -941,8 +944,8 @@ impl Discovery {
   // That causes ReaderProxies and WriterProxies to be constructed and
   // and we also get our own local readers and writers connected, both
   // built-in and user-defined.
-  // If we did not do this, the Readers and Writers in this participant could not
-  // find each other.
+  // If we did not do this, the Readers and Writers in this participant could
+  // not find each other.
   fn initialize_participant(&self) {
     let dp = if let Some(dp) = self.domain_participant.clone().upgrade() {
       dp
@@ -957,8 +960,8 @@ impl Discovery {
       Duration::INFINITE,
     );
 
-    // Initialize our own participant data into the Discovery DB, so we can talk to
-    // ourself.
+    // Initialize our own participant data into the Discovery DB, so we can talk
+    // to ourself.
     discovery_db_write(&self.discovery_db).update_participant(&participant_data);
 
     // This will read the participant from Discovery DB and construct
@@ -980,8 +983,8 @@ impl Discovery {
           #[cfg(feature = "security")]
           let permission = if let Some(security) = self.security_opt.as_mut() {
             // Security is enabled. Do a secure read, potentially starting the
-            // authentication protocol. The return value tells if normal Discovery is
-            // allowed to process the message.
+            // authentication protocol. The return value tells if normal
+            // Discovery is allowed to process the message.
             security.participant_read(
               &ds,
               &self.discovery_db,
@@ -1009,12 +1012,14 @@ impl Discovery {
             //
             // While the remote is still being authenticated, `participant_read`
             // returns a permission other than `Allow`, which skips
-            // `process_discovered_participant_data` above — and with it the normal
-            // "quick SPDP response" optimization. Without that, the remote would
-            // only learn about us on our next *periodic* SPDP (SPDP_PUBLISH_PERIOD),
-            // delaying the authentication handshake by up to a full period. Send an
-            // unsolicited one-shot quick SPDP response now (at most once per remote).
-            // We only re-announce our own public SPDP data, so this discloses nothing
+            // `process_discovered_participant_data` above — and with it the
+            // normal "quick SPDP response" optimization. Without
+            // that, the remote would only learn about us on our
+            // next *periodic* SPDP (SPDP_PUBLISH_PERIOD),
+            // delaying the authentication handshake by up to a full period.
+            // Send an unsolicited one-shot quick SPDP response now
+            // (at most once per remote). We only re-announce our
+            // own public SPDP data, so this discloses nothing
             // extra.
             #[cfg(feature = "security")]
             if let Sample::Value(participant_data) = &ds.value {
@@ -1063,14 +1068,16 @@ impl Discovery {
       // Send a quick response to make discovery faster.
       //
       // RTPS spec v2.5 Section "8.5.3.1 General Approach" [to SPDP] says
-      // "Implementations can minimize any start-up delays by sending an additional
-      // SPDPdiscoveredParticipantData in response to receiving this data-object from
-      // a previously unknown Participant, but this behavior is optional."
+      // "Implementations can minimize any start-up delays by sending an
+      // additional SPDPdiscoveredParticipantData in response to receiving
+      // this data-object from a previously unknown Participant, but this
+      // behavior is optional."
       //
       // But not to reply to self, because we know that we exist.
       // TODO: Maybe add some rate-limiting to this to avoid packet storms.
       if guid_prefix != self.domain_participant.guid().prefix {
-        // One-shot quick SPDP response on the shared timer (does not reschedule).
+        // One-shot quick SPDP response on the shared timer (does not
+        // reschedule).
         self.discovery_timer.borrow_mut().set_timeout(
           StdDuration::from_millis(10),
           DiscoveryTimerEvent::SendParticipantInfo { reschedule: false },
@@ -1340,15 +1347,16 @@ impl Discovery {
               writer,
               DiscoveredVia::Topic,
             );
-            // Now check if we know any readers of writers to this topic. The topic QoS
-            // could cause these to became viable matches against local
-            // writers/readers. This is because at least RTI Connext sends QoS
-            // policies on a Topic, and then (apparently) assumes that its
-            // readers/writers inherit those policies unless specified otherwise.
+            // Now check if we know any readers of writers to this topic. The
+            // topic QoS could cause these to became viable matches
+            // against local writers/readers. This is because at
+            // least RTI Connext sends QoS policies on a Topic, and
+            // then (apparently) assumes that its readers/writers
+            // inherit those policies unless specified otherwise.
 
-            // Note that additional security checks are not needed here, since if a
-            // reader/writer is in our DiscoveryDB, it has already passed the security
-            // checks.
+            // Note that additional security checks are not needed here, since
+            // if a reader/writer is in our DiscoveryDB, it has
+            // already passed the security checks.
             let writers = discovery_db_read(&self.discovery_db)
               .writers_on_topic_and_participant(topic_data.topic_name(), writer.prefix);
             debug!("writers {:?}", writers);
@@ -1421,8 +1429,8 @@ impl Discovery {
   }
 
   fn spdp_publish(&self, local_dp: &DomainParticipant) {
-    // setting 5 times the duration so lease doesn't break if update fails once or
-    // twice
+    // setting 5 times the duration so lease doesn't break if update fails once
+    // or twice
     let data = SpdpDiscoveredParticipantData::from_local_participant(
       local_dp,
       &self.security_opt,
@@ -1445,9 +1453,11 @@ impl Discovery {
 
   pub fn publish_participant_message(&mut self) {
     // Inspect if we need to send liveness messages
-    // See 8.4.13.5 "Implementing Writer Liveliness Protocol .." in the RPTS spec
+    // See 8.4.13.5 "Implementing Writer Liveliness Protocol .." in the RPTS
+    // spec
 
-    // Dig out the smallest lease duration for writers with Automatic liveliness QoS
+    // Dig out the smallest lease duration for writers with Automatic liveliness
+    // QoS
     let writer_livelinesses: Vec<Liveliness> = discovery_db_read(&self.discovery_db)
       .get_all_local_topic_writers()
       .filter_map(|p| p.publication_topic_data.liveliness)
@@ -1474,8 +1484,8 @@ impl Discovery {
          {min_auto_duration:?}"
       );
 
-      // We choose to send a new liveliness message if longer than half of the min
-      // auto duration has elapsed since last message
+      // We choose to send a new liveliness message if longer than half of the
+      // min auto duration has elapsed since last message
       if time_since_last_auto_update > min_auto_duration / 2 {
         let msg = ParticipantMessageData {
           guid: self.domain_participant.guid_prefix(),
@@ -1486,13 +1496,13 @@ impl Discovery {
       }
     }
 
-    // Send ManualByParticipant liveliness update if someone has requested us to do
-    // so.
-    // Note: According to the RTPS spec (8.7.2.2.3 LIVELINESS) the interval at which
-    // we check if we need to send a manual liveness update should depend on the
-    // lease durations of writers with ManualByParticipant liveness QoS.
-    // Now we just check this at the same interval as with Automatic liveness.
-    // So TODO if needed: comply with the spec.
+    // Send ManualByParticipant liveliness update if someone has requested us to
+    // do so.
+    // Note: According to the RTPS spec (8.7.2.2.3 LIVELINESS) the interval at
+    // which we check if we need to send a manual liveness update should
+    // depend on the lease durations of writers with ManualByParticipant
+    // liveness QoS. Now we just check this at the same interval as with
+    // Automatic liveness. So TODO if needed: comply with the spec.
     if self
       .liveliness_state
       .manual_participant_liveness_refresh_requested
@@ -1575,8 +1585,8 @@ impl Discovery {
   #[cfg(feature = "security")]
   fn receive_participant_volatile_message(&mut self) {
     if let Some(security) = self.security_opt.as_mut() {
-      // Security enabled. Get messages from the volatile message reader & feed to
-      // Secure Discovery.
+      // Security enabled. Get messages from the volatile message reader & feed
+      // to Secure Discovery.
       match self
         .dcps_participant_volatile_message_secure
         .reader
@@ -1841,8 +1851,8 @@ impl Discovery {
     // Publish it to SEDP (if needed)
     self.sedp_publish_single_user_writer(writer_data);
 
-    // Send the ReaderUpdated notification on any existing readers on the writer's
-    // topic This will result in matching the endpoints if possible
+    // Send the ReaderUpdated notification on any existing readers on the
+    // writer's topic This will result in matching the endpoints if possible
     let existing_readers = db.readers_on_topic(writer_data.publication_topic_data.topic_name());
     for reader in existing_readers {
       self.send_discovery_notification(DiscoveryNotificationType::ReaderUpdated {
@@ -1865,8 +1875,9 @@ impl Discovery {
     // Publish it to SEDP (if needed)
     self.sedp_publish_single_user_reader(reader_data);
 
-    // Send the WriterUpdated notification on any existing writers on the readers's
-    // topic This will result in matching the endpoints if possible
+    // Send the WriterUpdated notification on any existing writers on the
+    // readers's topic This will result in matching the endpoints if
+    // possible
     let existing_writers = db.writers_on_topic(reader_data.subscription_topic_data.topic_name());
     for writer in existing_writers {
       self.send_discovery_notification(DiscoveryNotificationType::WriterUpdated {
@@ -1929,9 +1940,9 @@ impl Discovery {
 
   pub fn sedp_publish_topic(&self, topic_name: &str) {
     let db = discovery_db_read(&self.discovery_db);
-    // We might have multiple topics with the same name (but different Qos etc..),
-    // and the following call gets just one of them. Should we publish all of
-    // them or is this enough?
+    // We might have multiple topics with the same name (but different Qos
+    // etc..), and the following call gets just one of them. Should we
+    // publish all of them or is this enough?
     let topic_data = match db.get_topic(topic_name) {
       Some(data) => data,
       None => {
@@ -2073,8 +2084,8 @@ impl Discovery {
 
   #[cfg(feature = "security")]
   pub const fn create_participant_stateless_message_qos() -> QosPolicies {
-    // See section 7.4.3 "New DCPSParticipantStatelessMessage builtin Topic" of the
-    // Security spec
+    // See section 7.4.3 "New DCPSParticipantStatelessMessage builtin Topic" of
+    // the Security spec
     QosPolicyBuilder::new()
       .reliability(Reliability::BestEffort) // Important!
       .history(History::KeepLast { depth: 1 })

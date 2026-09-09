@@ -302,7 +302,8 @@ impl CryptographicBuiltin {
 
     // This is the algorithm given in
     // DDS Security spec v1.1
-    // Section "9.5.3.3.3 Computation of SessionKey and SessionReceiverSpecificKey"
+    // Section "9.5.3.3.3 Computation of SessionKey and
+    // SessionReceiverSpecificKey"
     use ring::hmac;
 
     let magic_prefix = match rec_spec {

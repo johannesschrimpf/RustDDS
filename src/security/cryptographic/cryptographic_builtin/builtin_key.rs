@@ -53,8 +53,8 @@ impl BuiltinKey {
 
   // Rust `rand` library uses by default the 12-round chacha-algorithm, which is
   // "widely believed" to be secure.
-  // The library documentation states that the generator may be upgraded, if it is
-  // found to be insecure.
+  // The library documentation states that the generator may be upgraded, if it
+  // is found to be insecure.
   pub(super) fn generate_random(key_len: KeyLength) -> Self {
     match key_len {
       KeyLength::None => BuiltinKey::None,

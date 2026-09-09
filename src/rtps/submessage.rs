@@ -61,14 +61,14 @@ impl Submessage {
     let proposed_sub_content_length = if sub_header.content_length == 0 {
       // RTPS spec 2.3, section 9.4.5.1.3:
       //           In case octetsToNextHeader==0 and the kind of Submessage is
-      // NOT PAD or INFO_TS, the Submessage is the last Submessage in the Message
-      // and extends up to the end of the Message. This makes it possible to send
-      // Submessages larger than 64k (the size that can be stored in the
-      // octetsToNextHeader field), provided they are the last Submessage in the
-      // Message. In case the octetsToNextHeader==0 and the kind of Submessage is
-      // PAD or INFO_TS, the next Submessage header starts immediately after the
-      // current Submessage header OR the PAD or INFO_TS is the last Submessage
-      // in the Message.
+      // NOT PAD or INFO_TS, the Submessage is the last Submessage in the
+      // Message and extends up to the end of the Message. This makes it
+      // possible to send Submessages larger than 64k (the size that can
+      // be stored in the octetsToNextHeader field), provided they are the
+      // last Submessage in the Message. In case the octetsToNextHeader==0
+      // and the kind of Submessage is PAD or INFO_TS, the next Submessage
+      // header starts immediately after the current Submessage header OR
+      // the PAD or INFO_TS is the last Submessage in the Message.
       match sub_header.kind {
         SubmessageKind::PAD | SubmessageKind::INFO_TS => 0,
         _not_pad_or_info_ts => buffer.len() - sub_header_length,
@@ -136,7 +136,8 @@ impl Submessage {
 
     match sub_header.kind {
       SubmessageKind::DATA => {
-        // Manually implemented deserialization for DATA. Speedy does not quite cut it.
+        // Manually implemented deserialization for DATA. Speedy does not quite
+        // cut it.
         let f = BitFlags::<DATA_Flags>::from_bits_truncate(sub_header.flags);
         mk_w_subm(WriterSubmessage::Data(
           Data::deserialize_data(&sub_content_buffer, f)?,
@@ -145,7 +146,8 @@ impl Submessage {
       }
 
       SubmessageKind::DATA_FRAG => {
-        // Manually implemented deserialization for DATA. Speedy does not quite cut it.
+        // Manually implemented deserialization for DATA. Speedy does not quite
+        // cut it.
         let f = BitFlags::<DATAFRAG_Flags>::from_bits_truncate(sub_header.flags);
         mk_w_subm(WriterSubmessage::DataFrag(
           DataFrag::deserialize(&sub_content_buffer, f)?,
@@ -449,8 +451,8 @@ mod tests {
       .expect("could not create submessage header");
     let e = endianness_flag(header.flags);
 
-    // This is a malformed submessage. We expect the decoder to report that, but not
-    // panic.
+    // This is a malformed submessage. We expect the decoder to report that, but
+    // not panic.
     assert!(AckNack::read_from_buffer_with_ctx(e, &serialized_info_submessage[4..]).is_err());
   }
 

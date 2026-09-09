@@ -134,9 +134,9 @@ where
   //   encoding: RepresentationIdentifier,
   // ) -> Result<D::K, Self::Error> {
   //   match encoding {
-  //     RepresentationIdentifier::PL_CDR_LE | RepresentationIdentifier::PL_CDR_BE
-  // => {       <D::K>::from_pl_cdr_bytes(input_bytes, encoding)
-  //     }
+  //     RepresentationIdentifier::PL_CDR_LE |
+  // RepresentationIdentifier::PL_CDR_BE => {
+  // <D::K>::from_pl_cdr_bytes(input_bytes, encoding)     }
   //     repr_id => Err(PlCdrDeserializeError::NotSupported(format!(
   //       "Unknown representation identifier {:?}",
   //       repr_id

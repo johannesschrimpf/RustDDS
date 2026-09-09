@@ -137,8 +137,8 @@ impl ParticipantAccessControl for AccessControlBuiltin {
           .map_err(|e| create_security_error_and_log!("{e:?}"))
       })?;
 
-    // Check the subject name in the identity certificate matches the one from the
-    // permissions document.
+    // Check the subject name in the identity certificate matches the one from
+    // the permissions document.
     // First get the subject name from the certificate
     let subject_name: DistinguishedName = participant_qos
       .get_property(QOS_IDENTITY_CERTIFICATE_PROPERTY_NAME)
@@ -264,8 +264,8 @@ impl ParticipantAccessControl for AccessControlBuiltin {
     )
     .map_err(|e| security_error(&format!("Could not parse permissions from XML: {e:?}")))?;
 
-    // Check the subject name in the identity certificate matches the one from the
-    // permissions document.
+    // Check the subject name in the identity certificate matches the one from
+    // the permissions document.
     if remote_domain_participant_permissions
       .find_grant(remote_subject_name, &Utc::now())
       .is_none()
@@ -306,10 +306,11 @@ impl ParticipantAccessControl for AccessControlBuiltin {
     domain_id: u16,
     _participant_data: Option<&SpdpDiscoveredParticipantData>,
   ) -> SecurityResult<bool> {
-    // Move the following check to validate_remote_permissions from check_remote_
-    // methods, as there we have access to the tokens: "If the PluginClassName
-    // or the MajorVersion of the local permissions_token differ from those in
-    // the remote_permissions_token, the operation shall return FALSE."
+    // Move the following check to validate_remote_permissions from
+    // check_remote_ methods, as there we have access to the tokens: "If the
+    // PluginClassName or the MajorVersion of the local permissions_token
+    // differ from those in the remote_permissions_token, the operation
+    // shall return FALSE."
 
     self.check_participant(permissions_handle, domain_id)
   }
@@ -321,7 +322,8 @@ impl ParticipantAccessControl for AccessControlBuiltin {
         // The CA subject name and algorithm identifier are optional properties
         // according to the spec. We do not set values for them, since this has
         // caused interoperability issues with FastDDS. In RustDDS we do not
-        // use them for anything, since they don't provide any additional security.
+        // use them for anything, since they don't provide any additional
+        // security.
         BuiltinPermissionsToken {
           permissions_ca_subject_name: None,
           permissions_ca_algorithm: None,

@@ -101,9 +101,10 @@ where
     receive_timestamp: Timestamp,
     write_options: WriteOptions,
   ) {
-    // Defense in depth: the topic cache already hands us strictly monotonic (hence
-    // unique) receive timestamps, but if two ever collide here, probe forward by
-    // one tick to a free key instead of panicking or dropping the sample.
+    // Defense in depth: the topic cache already hands us strictly monotonic
+    // (hence unique) receive timestamps, but if two ever collide here,
+    // probe forward by one tick to a free key instead of panicking or
+    // dropping the sample.
     let mut receive_timestamp = receive_timestamp;
     while self.datasamples.contains_key(&receive_timestamp) {
       receive_timestamp = Timestamp::from_ticks(receive_timestamp.to_ticks().wrapping_add(1));
@@ -233,9 +234,9 @@ where
 
   // Helper for select_keys and select_instance_keys
   //
-  // Selection is in timestamp order. If there are samples that have been received
-  // out-of-order, then those need to be sorted. Note that there may be
-  // SequenceNumbers from several writers. We need to keep SequenceNumbers
+  // Selection is in timestamp order. If there are samples that have been
+  // received out-of-order, then those need to be sorted. Note that there may
+  // be SequenceNumbers from several writers. We need to keep SequenceNumbers
   // ordered per writer, but there are no other ordering guarantees. (TODO: What
   // about Presentation QoS?)
   //
@@ -253,8 +254,8 @@ where
 
   // Calling select_(instance)_keys_for access does not constitute access, i.e.
   // it does not change any state of the cache.
-  // Samples are marked read or viewed only when "read" or "take" methods (below)
-  // are called.
+  // Samples are marked read or viewed only when "read" or "take" methods
+  // (below) are called.
   pub fn select_keys_for_access(&self, rc: ReadCondition) -> Vec<(Timestamp, D::K)> {
     let mut keys: Vec<(Timestamp, D::K)> = self
       .datasamples
@@ -399,10 +400,10 @@ where
   // There are two versions of both read and take: Return DataSample<D> (incl.
   // metadata) and "bare" versions without metadata.
   //
-  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were immediately
-  // before this call obtained by select_*_for_access functions. This function
-  // will blindly assume that the given keys and timestamps are present in the
-  // cache. Function will panic if somthign is not found.
+  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were
+  // immediately before this call obtained by select_*_for_access functions.
+  // This function will blindly assume that the given keys and timestamps are
+  // present in the cache. Function will panic if somthign is not found.
   pub(in crate::dds::with_key) fn read_by_keys(
     &mut self,
     keys: &[(Timestamp, D::K)],
@@ -469,10 +470,10 @@ where
     result
   }
 
-  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were immediately
-  // before this call obtained by select_*_for_access functions. This function
-  // will blindly assume that the given keys and timestamps are present in the
-  // cache. Function will panic if somthign is not found.
+  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were
+  // immediately before this call obtained by select_*_for_access functions.
+  // This function will blindly assume that the given keys and timestamps are
+  // present in the cache. Function will panic if somthign is not found.
   pub(in crate::dds::with_key) fn take_by_keys(
     &mut self,
     keys: &[(Timestamp, D::K)],
@@ -504,8 +505,8 @@ where
       let dswm = self.datasamples.remove(ts).unwrap();
       let imd = self.instance_map.get(key).unwrap();
       let sample_info = Self::make_sample_info(&dswm, imd, len - index - 1, mrs_total, mrsic_total);
-      // dwsm.sample_has_been_read = true; // no need to mark read, as the dswm is
-      // about to be destroyed
+      // dwsm.sample_has_been_read = true; // no need to mark read, as the dswm
+      // is about to be destroyed
       Self::record_instance_generation_viewed(
         &mut instance_generations,
         dswm.generation_counts,
@@ -518,10 +519,10 @@ where
     result
   }
 
-  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were immediately
-  // before this call obtained by select_*_for_access functions. This function
-  // will blindly assume that the given keys and timestamps are present in the
-  // cache. Function will panic if somthign is not found.
+  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were
+  // immediately before this call obtained by select_*_for_access functions.
+  // This function will blindly assume that the given keys and timestamps are
+  // present in the cache. Function will panic if somthign is not found.
   pub(in crate::dds::with_key) fn read_bare_by_keys(
     &mut self,
     keys: &[(Timestamp, D::K)],
@@ -561,10 +562,10 @@ where
   }
 
   //
-  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were immediately
-  // before this call obtained by select_*_for_access functions. This function
-  // will blindly assume that the given keys and timestamps are present in the
-  // cache. Function will panic if somthign is not found.
+  // Panics: `keys` must only contain (Timestamp,Key)-pairs that were
+  // immediately before this call obtained by select_*_for_access functions.
+  // This function will blindly assume that the given keys and timestamps are
+  // present in the cache. Function will panic if somthign is not found.
   pub(in crate::dds::with_key) fn take_bare_by_keys(
     &mut self,
     keys: &[(Timestamp, D::K)],
@@ -580,8 +581,8 @@ where
 
     for (ts, key) in keys.iter() {
       let dswm = self.datasamples.remove(ts).unwrap();
-      // dwsm.sample_has_been_read = true; // no need to mark read, as the dswm is
-      // about to be destroyed
+      // dwsm.sample_has_been_read = true; // no need to mark read, as the dswm
+      // is about to be destroyed
       Self::record_instance_generation_viewed(
         &mut instance_generations,
         dswm.generation_counts,

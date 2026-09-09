@@ -83,12 +83,12 @@ impl PrivateKey {
     //
     // example path_and_query, which is part of URI after scheme "pkcs11:"
     //
-    // token=my_token_label?pin-value=1234&module-path=/usr/lib/softhsm/libsofthsm2.
-    // so
+    // token=my_token_label?pin-value=1234&module-path=/usr/lib/softhsm/
+    // libsofthsm2. so
     //
-    // The "module-path" is a query-attribute like the PIN, and not a path-attribute
-    // like "token", which may seem a bit strange choice, but that is what RFC
-    // 7512 says.
+    // The "module-path" is a query-attribute like the PIN, and not a
+    // path-attribute like "token", which may seem a bit strange choice, but
+    // that is what RFC 7512 says.
     let (path, query) = path_and_query
       .split_once('?')
       .unwrap_or((path_and_query, ""));
@@ -106,7 +106,8 @@ impl PrivateKey {
     let module_path: &str = query_attrs
       .get("module-path")
       .cloned()
-      .unwrap_or("/usr/lib/softhsm/libsofthsm2.so"); // Some semi-reasnoable default value.
+      .unwrap_or("/usr/lib/softhsm/libsofthsm2.so"); // Some semi-reasnoable
+                                                     // default value.
 
     info!("Opening PKCS#11 HSM client library {module_path}");
     let context = Pkcs11::new(module_path)?;
@@ -126,7 +127,8 @@ impl PrivateKey {
                 let session = context.open_ro_session(*slot)?;
                 let secret_pin_opt: Option<AuthPin> =
                   pin_value_opt.map(|p| AuthPin::new((*p).into()));
-                session.login(UserType::User, secret_pin_opt.as_ref())?; // bail on failure
+                session.login(UserType::User, secret_pin_opt.as_ref())?; // bail
+                                                                         // on failure
                 info!(
                   "Logged into token \"{}\" , using PIN = {:?}",
                   token_label,
@@ -142,7 +144,8 @@ impl PrivateKey {
                     .any(|a| a == &Attribute::Class(ObjectClass::PRIVATE_KEY))
                     && attr.iter().any(|a| a == &Attribute::Sign(true))
                   {
-                    // Is a private key and declares to support "sign" operation.
+                    // Is a private key and declares to support "sign"
+                    // operation.
                     let object_label = attr.iter().find_map(|a| match a {
                       Attribute::Label(bytes) => Some(String::from_utf8_lossy(bytes)),
                       _ => None,
@@ -154,7 +157,8 @@ impl PrivateKey {
                       session.sign(&key_algorithm.into(), *obj, b"This is just dummy data");
                     if test_signature_result.is_ok() {
                       debug!("Object {obj_num}: Test signing success.");
-                      // Object looks like a legit private key, so we'll use that.
+                      // Object looks like a legit private key, so we'll use
+                      // that.
                       return Ok(PrivateKey::InHSM {
                         key_algorithm,
                         context,
@@ -211,10 +215,10 @@ impl PrivateKey {
         // PKCS#11 (HSM) provides fixed-length ECDSA-signatures without SHA256.
         //
         // In order to
-        // use HSM signing in DDS, we must first compute the SHA256 digest, then sign
-        // using ECDSA. The result is two 32-byte integers (r,s) concatenated
-        // together. These need to be ASN.1 DER-encoded according to RFC 3279
-        // Section 2.2.3 as
+        // use HSM signing in DDS, we must first compute the SHA256 digest, then
+        // sign using ECDSA. The result is two 32-byte integers (r,s)
+        // concatenated together. These need to be ASN.1 DER-encoded
+        // according to RFC 3279 Section 2.2.3 as
         // ```
         // Ecdsa-Sig-Value  ::=  SEQUENCE  {
         //   r     INTEGER,
@@ -225,7 +229,8 @@ impl PrivateKey {
         // [ring crate documentation](https://docs.rs/ring/0.17.8/ring/signature/index.html)
         // for explaining this.
 
-        // First, hash the message to be signed. Then sign the hash, not the message.
+        // First, hash the message to be signed. Then sign the hash, not the
+        // message.
         let msg_digest = digest::digest(&digest::SHA256, msg);
 
         // Second, ask HSM to compute the signature
@@ -242,11 +247,14 @@ impl PrivateKey {
         }
 
         // Third, convert raw signature to ASN.1 with DER
-        let (r, s) = hsm_signature_raw.split_at(32); // safe, because of the length check above
-        let mut hsm_signature_der = Vec::with_capacity(80); // typically needs about 70..72 bytes
+        // safe, because of the length check above
+        let (r, s) = hsm_signature_raw.split_at(32);
+        // typically needs about 70..72 bytes
+        let mut hsm_signature_der = Vec::with_capacity(80);
 
-        // Safety: We expect all the .unwrap() calls below to succeed, becaues the
-        // possible errors are size overflows, and here the input sizes are fixed.
+        // Safety: We expect all the .unwrap() calls below to succeed, becaues
+        // the possible errors are size overflows, and here the input
+        // sizes are fixed.
         let sequence_of_r_s = vec![
           asn1::UintRef::new(r).unwrap(),
           asn1::UintRef::new(s).unwrap(),

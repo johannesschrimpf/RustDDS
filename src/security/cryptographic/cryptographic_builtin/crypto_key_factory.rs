@@ -146,8 +146,8 @@ impl CryptographicBuiltin {
       digest::digest(&digest::SHA256, hmac_key_plain.concat().as_ref()).as_ref(),
     );
     let hashed_secret = hmac::sign(&hmac_key, shared_secret.as_ref());
-    // from_bytes handles truncation. HMAC_SHA256 gives 256 bit output so this never
-    // fails.
+    // from_bytes handles truncation. HMAC_SHA256 gives 256 bit output so this
+    // never fails.
     BuiltinKey::from_bytes(KeyLength::AES256, hashed_secret.as_ref()).unwrap()
   }
 
@@ -241,8 +241,8 @@ impl CryptographicBuiltin {
         endpoint_info_set.remove(&endpoint_info);
       }
 
-      // If the endpoint is remote remove the association to the corresponding local
-      // endpoint
+      // If the endpoint is remote remove the association to the corresponding
+      // local endpoint
       if let Some(matched_local_endpoint_crypto_handle) =
         self.matched_local_endpoint.remove(&endpoint_crypto_handle)
       {
@@ -371,8 +371,8 @@ impl CryptoKeyFactory for CryptographicBuiltin {
 
     let use_256_bit_key = Self::use_256_bit_key(datawriter_properties);
 
-    // The key material for volatile datawriter is derived from the shared secret in
-    // register_matched_remote_datareader
+    // The key material for volatile datawriter is derived from the shared
+    // secret in register_matched_remote_datareader
     if Self::is_volatile(datawriter_properties) {
       self.insert_common_encode_key_materials(
         local_datawriter_crypto_handle,
@@ -452,8 +452,8 @@ impl CryptoKeyFactory for CryptographicBuiltin {
         let volatile_key_materials =
           Self::derive_volatile_key_materials(&shared_secret, use_256_bit_key)?;
 
-        // Instead of sending keys over the network like in other topics, the same key
-        // material is used for decoding
+        // Instead of sending keys over the network like in other topics, the
+        // same key material is used for decoding
         self.insert_decode_key_materials(
           remote_datareader_crypto_handle,
           volatile_key_materials.clone(),
@@ -528,8 +528,8 @@ impl CryptoKeyFactory for CryptographicBuiltin {
     let local_datareader_crypto_handle = self.generate_crypto_handle();
 
     let use_256_bit_key = Self::use_256_bit_key(datareader_properties);
-    // The key material for volatile datareader is derived from the shared secret in
-    // register_matched_remote_datawriter
+    // The key material for volatile datareader is derived from the shared
+    // secret in register_matched_remote_datawriter
     if Self::is_volatile(datareader_properties) {
       self.insert_common_encode_key_materials(
         local_datareader_crypto_handle,
@@ -588,8 +588,8 @@ impl CryptoKeyFactory for CryptographicBuiltin {
         let volatile_key_materials =
           Self::derive_volatile_key_materials(&shared_secret, use_256_bit_key)?;
 
-        // Instead of sending keys over the network like in other topics, the same key
-        // material is used for decoding
+        // Instead of sending keys over the network like in other topics, the
+        // same key material is used for decoding
         self.insert_decode_key_materials(
           remote_datawriter_crypto_handle,
           volatile_key_materials.clone(),
