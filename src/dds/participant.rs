@@ -1105,6 +1105,7 @@ pub(crate) struct DomainParticipantInner {
   dds_cache: Arc<RwLock<DDSCache>>,
   discovery_db: Arc<RwLock<DiscoveryDB>>,
   discovery_db_event_receiver: mio_channel::Receiver<()>,
+  discovery_db_poll: mio_06::Poll,
 
   // status event receiver
   status_receiver: StatusChannelReceiver<DomainParticipantStatusEvent>,
@@ -1281,6 +1282,17 @@ impl DomainParticipantInner {
     let (discovery_db_event_sender, discovery_db_event_receiver) =
       mio_channel::sync_channel::<()>(1);
 
+    // A mio-extras receiver can only be registered once. Keep its Poll alive
+    // across find_topic calls, which are serialized by the participant lock.
+    // Register before any DB updates so level-triggered readiness covers them.
+    let discovery_db_poll = mio_06::Poll::new()?;
+    discovery_db_poll.register(
+      &discovery_db_event_receiver,
+      mio_06::Token(0),
+      mio_06::Ready::readable(),
+      mio_06::PollOpt::level(),
+    )?;
+
     // Discovert DB creation
     let discovery_db = Arc::new(RwLock::new(DiscoveryDB::new(
       participant_guid,
@@ -1372,6 +1384,7 @@ impl DomainParticipantInner {
       dds_cache,
       discovery_db,
       discovery_db_event_receiver,
+      discovery_db_poll,
       status_receiver,
       self_locators,
       security_plugins_handle,
@@ -1501,16 +1514,7 @@ impl DomainParticipantInner {
   ) -> CreateResult<Option<Topic>> {
     use mio_06 as mio;
 
-    let poll = mio::Poll::new()?;
     let mut events = mio::Events::with_capacity(1);
-    // Should be register before the check and use level trigger to avoid missing
-    // event
-    poll.register(
-      &self.discovery_db_event_receiver,
-      mio_06::Token(0),
-      mio::Ready::readable(),
-      mio::PollOpt::level(),
-    )?;
 
     let find_end = Instant::now() + timeout;
     loop {
@@ -1518,7 +1522,7 @@ impl DomainParticipantInner {
         return Ok(Some(topic));
       }
       let timeout = find_end - Instant::now();
-      poll.poll(&mut events, Some(timeout))?;
+      self.discovery_db_poll.poll(&mut events, Some(timeout))?;
 
       if let Some(_event) = events.iter().next() {
         if self.discovery_db_event_receiver.try_recv().is_ok() {
