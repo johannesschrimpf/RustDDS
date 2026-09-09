@@ -178,7 +178,8 @@ where
     max_samples: usize,
     read_condition: ReadCondition,
   ) -> ReadResult<Vec<DataSample<&D>>> {
-    // Clear notification buffer. This must be done first to avoid race conditions.
+    // Clear notification buffer. This must be done first to avoid race
+    // conditions.
     self.drain_read_notifications();
     self.fill_and_lock_local_datasample_cache()?;
 
@@ -237,7 +238,8 @@ where
     max_samples: usize,
     read_condition: ReadCondition,
   ) -> ReadResult<Vec<DataSample<D>>> {
-    // Clear notification buffer. This must be done first to avoid race conditions.
+    // Clear notification buffer. This must be done first to avoid race
+    // conditions.
     self.drain_read_notifications();
 
     self.fill_and_lock_local_datasample_cache()?;
@@ -352,7 +354,8 @@ where
     max_samples: usize,
     read_condition: ReadCondition,
   ) -> ReadResult<Vec<Sample<D, D::K>>> {
-    // Clear notification buffer. This must be done first to avoid race conditions.
+    // Clear notification buffer. This must be done first to avoid race
+    // conditions.
     self.drain_read_notifications();
     self.fill_and_lock_local_datasample_cache()?;
 
@@ -403,8 +406,8 @@ where
   /// }
   /// ```
   pub fn iterator(&mut self) -> ReadResult<impl Iterator<Item = Sample<&D, D::K>>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(
       self
         .read_bare(usize::MAX, ReadCondition::not_read())?
@@ -451,8 +454,8 @@ where
     &mut self,
     read_condition: ReadCondition,
   ) -> ReadResult<impl Iterator<Item = Sample<&D, D::K>>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(self.read_bare(usize::MAX, read_condition)?.into_iter())
   }
 
@@ -494,8 +497,8 @@ where
   /// }
   /// ```
   pub fn into_iterator(&mut self) -> ReadResult<impl Iterator<Item = Sample<D, D::K>>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // take call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a take call
     Ok(
       self
         .take_bare(usize::MAX, ReadCondition::not_read())?
@@ -544,8 +547,8 @@ where
     &mut self,
     read_condition: ReadCondition,
   ) -> ReadResult<impl Iterator<Item = Sample<D, D::K>>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // take call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a take call
     Ok(self.take_bare(usize::MAX, read_condition)?.into_iter())
   }
 
@@ -688,7 +691,8 @@ where
     // Next = select next instance in the order specified by Ord on keys.
     this_or_next: SelectByKey,
   ) -> ReadResult<Vec<DataSample<D>>> {
-    // Clear notification buffer. This must be done first to avoid race conditions.
+    // Clear notification buffer. This must be done first to avoid race
+    // conditions.
     self.drain_read_notifications();
 
     self.fill_and_lock_local_datasample_cache()?;
@@ -721,11 +725,11 @@ where
 
   // Spec calls for two separate functions:
   // get_matched_publications returns a list of handles
-  // get_matched_publication_data returns PublicationBuiltinTopicData for a handle
-  // But we do not believe in handle-oriented programming, so just return
-  // the actual data right away. Since the handles are quite opaque, about the
-  // only thing that could be done with the handles would be counting how many
-  // we got.
+  // get_matched_publication_data returns PublicationBuiltinTopicData for a
+  // handle But we do not believe in handle-oriented programming, so just
+  // return the actual data right away. Since the handles are quite opaque,
+  // about the only thing that could be done with the handles would be
+  // counting how many we got.
 
   pub fn get_matched_publications(&self) -> impl Iterator<Item = PublicationBuiltinTopicData> {
     // TODO: Obviously not implemented
@@ -940,7 +944,8 @@ where
           None => {
             // Did not get any data.
             // --> Store waker.
-            // 1. synchronously store waker to background thread (must rendezvous)
+            // 1. synchronously store waker to background thread (must
+            //    rendezvous)
             // 2. try take_bare again, in case something arrived just now
             // 3. if nothing still, return pending.
             datareader
@@ -1032,7 +1037,8 @@ where
           None => {
             // Did not get any data.
             // --> Store waker.
-            // 1. synchronously store waker to background thread (must rendezvous)
+            // 1. synchronously store waker to background thread (must
+            //    rendezvous)
             // 2. try take again, in case something arrived just now
             // 3. if nothing still, return pending.
             datareader
@@ -1514,8 +1520,8 @@ mod tests {
     reader.handle_data_msg(data_msg3, data_flags, &mr_state);
     reader.handle_data_msg(data_msg4, data_flags, &mr_state);
 
-    // Check that calling read_instance with different keys and SelectByKey options
-    // works as expected
+    // Check that calling read_instance with different keys and SelectByKey
+    // options works as expected
 
     info!("calling read with key 1 and this");
     let results =
@@ -1579,8 +1585,8 @@ mod tests {
     assert_eq!(data_key2_2, d2);
     assert_eq!(data_key2_1, d1);
 
-    // Check that calling take_instance again returns nothing because all samples
-    // have been consumed
+    // Check that calling take_instance again returns nothing because all
+    // samples have been consumed
     info!("calling take with key 2 and this");
     let results =
       datareader.take_instance(100, ReadCondition::any(), Some(key2), SelectByKey::This);

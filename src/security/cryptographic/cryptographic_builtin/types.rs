@@ -307,8 +307,9 @@ impl TryFrom<CryptoHeader> for BuiltinCryptoHeader {
       plugin_crypto_header_extra,
     }: CryptoHeader,
   ) -> Result<Self, Self::Error> {
-    // Try to cast [CryptoTransformIdentifier] to [BuiltinCryptoTransformIdentifier]
-    // and read the initialization vector from 'crypto_header_extra'
+    // Try to cast [CryptoTransformIdentifier] to
+    // [BuiltinCryptoTransformIdentifier] and read the initialization vector
+    // from 'crypto_header_extra'
     Ok(Self {
       transform_identifier: BuiltinCryptoTransformIdentifier::try_from(transformation_id)?,
       builtin_crypto_header_extra: BuiltinCryptoHeaderExtra::try_from(plugin_crypto_header_extra)?,

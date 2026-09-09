@@ -146,7 +146,8 @@ pub struct DPEventLoop {
 }
 
 impl DPEventLoop {
-  // This pub(crate) , because it should be constructed only by DomainParticipant.
+  // This pub(crate) , because it should be constructed only by
+  // DomainParticipant.
   #[allow(clippy::too_many_arguments, clippy::needless_pass_by_value)]
   pub(crate) fn new(
     domain_info: DomainInfo,
@@ -292,7 +293,8 @@ impl DPEventLoop {
     );
 
     #[cfg(not(feature = "security"))]
-    let security_plugins_opt = security_plugins_opt.and(None); // make sure it is None an consume value
+    // make sure it is None an consume value
+    let security_plugins_opt = security_plugins_opt.and(None);
 
     let interface_observations = Rc::new(RefCell::new(InterfaceObservations::new()));
     let local_interfaces: Rc<[IfAddr]> = Rc::from(local_interface_table());
@@ -333,10 +335,12 @@ impl DPEventLoop {
   }
 
   pub fn event_loop(self) {
-    let mut events = Events::with_capacity(16); // too small capacity just delays events to next poll
+    let mut events = Events::with_capacity(16); // too small capacity just
+                                                // delays events to next poll
 
-    // The shared timer (carrying preemptive-ACKNACK and cache-GC seeds, plus all
-    // per-endpoint timeouts) was created, registered and seeded in `new()`.
+    // The shared timer (carrying preemptive-ACKNACK and cache-GC seeds, plus
+    // all per-endpoint timeouts) was created, registered and seeded in
+    // `new()`.
     let mut poll_alive = Instant::now();
     let mut ev_wrapper = self;
     let mut preparing_to_stop = false;
@@ -380,8 +384,9 @@ impl DPEventLoop {
             TokenDecode::FixedToken(fixed_token) => match fixed_token {
               STOP_POLL_TOKEN => {
                 use std::sync::mpsc::TryRecvError;
-                // Read commands from the stop receiver until none left or quitting
-                // It would be nice turn the receiver into an iterator and avoid using the
+                // Read commands from the stop receiver until none left or
+                // quitting It would be nice turn the receiver
+                // into an iterator and avoid using the
                 // boolean..
                 let mut try_recv_more = true;
                 while try_recv_more {
@@ -389,7 +394,8 @@ impl DPEventLoop {
                     Ok(EventLoopCommand::PrepareStop) => {
                       info!("dp_event_loop preparing to stop.");
                       preparing_to_stop = true;
-                      // There could still be an EventLoopCommand::Stop coming. Keep on receiving.
+                      // There could still be an EventLoopCommand::Stop coming.
+                      // Keep on receiving.
                       try_recv_more = true;
                     }
                     Ok(EventLoopCommand::Stop) => {
@@ -481,9 +487,10 @@ impl DPEventLoop {
                 }
               }
               DPEV_TIMER_TOKEN => {
-                // Drain all expired timeouts while holding a single borrow, then
-                // release it before dispatching (handlers re-borrow the timer to
-                // reschedule, so we must not hold the borrow across dispatch).
+                // Drain all expired timeouts while holding a single borrow,
+                // then release it before dispatching (handlers
+                // re-borrow the timer to reschedule, so we must
+                // not hold the borrow across dispatch).
                 let expired: Vec<DpTimerEvent> = {
                   let mut timer = ev_wrapper.shared_timer.borrow_mut();
                   let mut v = Vec::new();
@@ -510,7 +517,8 @@ impl DPEventLoop {
                         .set_timeout(CACHE_CLEAN_PERIOD, DpTimerEvent::CacheGc);
                     }
                     DpTimerEvent::Reader { entity_id, event } => {
-                      // A stale timeout for an already-removed reader is harmless.
+                      // A stale timeout for an already-removed reader is
+                      // harmless.
                       if let Some(reader) = ev_wrapper.message_receiver.reader_mut(entity_id) {
                         reader.handle_timed_event(event);
                       } else if !preparing_to_stop {
@@ -518,7 +526,8 @@ impl DPEventLoop {
                       }
                     }
                     DpTimerEvent::Writer { entity_id, event } => {
-                      // A stale timeout for an already-removed writer is harmless.
+                      // A stale timeout for an already-removed writer is
+                      // harmless.
                       if let Some(writer) = ev_wrapper.writers.get_mut(&entity_id) {
                         writer.handle_timed_event(event);
                       } else if !preparing_to_stop {
@@ -570,13 +579,14 @@ impl DPEventLoop {
                     (writer.take_blocked_sockets(), writer.local_readers())
                   }
                 };
-                // nonblocking-transmit: if the socket(s) congested, enqueue this
-                // writer for a round-robin resume on write readiness.
+                // nonblocking-transmit: if the socket(s) congested, enqueue
+                // this writer for a round-robin resume on write
+                // readiness.
                 for sid in blocked {
                   ev_wrapper.mark_writer_willing(sid, eid);
                 }
-                // Notify local (same participant) readers that new data is available in the
-                // cache.
+                // Notify local (same participant) readers that new data is
+                // available in the cache.
                 ev_wrapper
                   .message_receiver
                   .notify_data_to_readers(local_readers);
@@ -596,8 +606,9 @@ impl DPEventLoop {
         } // for
 
         // Apply the endpoint removals that were deferred during this batch. The
-        // batch may have contained command events for these endpoints, and those
-        // were dispatched above while the endpoints were still present.
+        // batch may have contained command events for these endpoints, and
+        // those were dispatched above while the endpoints were still
+        // present.
         for reader_guid in readers_to_remove.drain(..) {
           ev_wrapper.remove_local_reader(reader_guid);
         }
@@ -702,8 +713,9 @@ impl DPEventLoop {
     }
   }
 
-  // Fallback for platforms without EventedFd: flush/serve every socket each loop
-  // iteration (the loop uses a short poll timeout while anything is pending).
+  // Fallback for platforms without EventedFd: flush/serve every socket each
+  // loop iteration (the loop uses a short poll timeout while anything is
+  // pending).
   #[cfg(not(unix))]
   fn drain_outbound_fallback(&mut self) {
     for sid in self.udp_sender.socket_ids() {
@@ -734,9 +746,10 @@ impl DPEventLoop {
       }
       REMOVE_READER_TOKEN => {
         // Only collect here. Dropping a DataReader both signals the removal and
-        // wakes its command channel, so the current event batch may still hold a
-        // command event for this reader. Removing it immediately would turn that
-        // event into a spurious "unknown reader" lookup miss.
+        // wakes its command channel, so the current event batch may still hold
+        // a command event for this reader. Removing it immediately
+        // would turn that event into a spurious "unknown reader" lookup
+        // miss.
         while let Ok(old_reader_guid) = self.remove_reader_receiver.receiver.try_recv() {
           pending_removals.push(old_reader_guid);
         }
@@ -782,8 +795,8 @@ impl DPEventLoop {
         // EntityId: {[0, 3, 0] EntityKind::WRITER_NO_KEY_BUILT_IN}.
         // In this case a writer cannot be found, because FastDDS sends
         // pre-emptive acknacks about a built-in topic defined in DDS Xtypes
-        // specification, which RustDDS does not implement. So even though the acknack
-        // cannot be handled, it is not a problem in this case.
+        // specification, which RustDDS does not implement. So even though the
+        // acknack cannot be handled, it is not a problem in this case.
         debug!(
           "Couldn't handle acknack/nackfrag! Did not find local RTPS writer with GUID: \
            {writer_guid:x?}"
@@ -810,8 +823,8 @@ impl DPEventLoop {
         return;
       };
 
-    // Select which builtin endpoints of the remote participant are updated to local
-    // readers & writers
+    // Select which builtin endpoints of the remote participant are updated to
+    // local readers & writers
     #[cfg(not(feature = "security"))]
     let (readers_init_list, writers_init_list) = (
       STANDARD_BUILTIN_READERS_INIT_LIST.to_vec(),
@@ -826,8 +839,8 @@ impl DPEventLoop {
 
       (readers_init_list, writers_init_list)
     } else {
-      // Security enabled. The endpoints are selected based on the authentication
-      // status of the remote participant
+      // Security enabled. The endpoints are selected based on the
+      // authentication status of the remote participant
       let mut readers_init_list = vec![];
       let mut writers_init_list = vec![];
 
@@ -845,7 +858,8 @@ impl DPEventLoop {
           writers_init_list.extend_from_slice(SECURE_BUILTIN_WRITERS_INIT_LIST);
         }
         Some(AuthenticationStatus::Unauthenticated) => {
-          // Match only the regular builtin endpoints (see Security spec section 8.8.2.1)
+          // Match only the regular builtin endpoints (see Security spec section
+          // 8.8.2.1)
           readers_init_list.extend_from_slice(STANDARD_BUILTIN_READERS_INIT_LIST);
           writers_init_list.extend_from_slice(STANDARD_BUILTIN_WRITERS_INIT_LIST);
         }
@@ -859,11 +873,12 @@ impl DPEventLoop {
 
     // Never create send-destinations (built-in reader proxies) toward our *own*
     // participant. We already know our own endpoints locally, so a self reader
-    // proxy would only ever be a reliable writer target that never ACKs, causing
-    // an endless retransmit flood onto the metatraffic multicast group (the self
-    // proxy's loopback unicast is split into the observation-gated bucket, so its
-    // route falls back to multicast). Reflection in the DiscoveryDB (recognizing
-    // our own announcements) is kept; only self send-matching is skipped.
+    // proxy would only ever be a reliable writer target that never ACKs,
+    // causing an endless retransmit flood onto the metatraffic multicast
+    // group (the self proxy's loopback unicast is split into the
+    // observation-gated bucket, so its route falls back to multicast).
+    // Reflection in the DiscoveryDB (recognizing our own announcements) is
+    // kept; only self send-matching is skipped.
 
     // Update local writers, i.e. reader_proxies inside them
     for (writer_eid, reader_eid, reader_endpoint_set_elem, reader_qos) in &readers_init_list {
@@ -1021,8 +1036,8 @@ impl DPEventLoop {
             false // match_to_reader
           } else {
             // Signal Secure discovery to exchange keys with the remote
-            // TODO: do this only at first encounter with the remote / before keys have been
-            // sent, not every time
+            // TODO: do this only at first encounter with the remote / before
+            // keys have been sent, not every time
             self
               .discovery_command_sender
               .send(DiscoveryCommand::StartKeyExchangeWithRemoteEndpoint {
@@ -1043,7 +1058,8 @@ impl DPEventLoop {
         };
 
         if match_to_reader {
-          // Should we check if the participant has published a QoS for the topic?
+          // Should we check if the participant has published a QoS for the
+          // topic?
           let requested_qos = remote_reader.subscription_topic_data.qos();
           writer.update_reader_proxy(
             &RtpsReaderProxy::from_discovered_reader_data(remote_reader, &[], &[]),
@@ -1110,8 +1126,8 @@ impl DPEventLoop {
             false // match_to_writer
           } else {
             // Signal Secure discovery to exchange keys with the remote
-            // TODO: do this only at first encounter with the remote / before keys have been
-            // sent, not every time
+            // TODO: do this only at first encounter with the remote / before
+            // keys have been sent, not every time
             if let Err(e) = self.discovery_command_sender.send(
               DiscoveryCommand::StartKeyExchangeWithRemoteEndpoint {
                 local_endpoint_guid: local_reader_guid,
@@ -1132,7 +1148,8 @@ impl DPEventLoop {
 
         if match_to_writer {
           let offered_qos = remote_writer.publication_topic_data.qos();
-          // Should we check if the participant has published a QoS for the topic?
+          // Should we check if the participant has published a QoS for the
+          // topic?
           reader.update_writer_proxy(
             RtpsWriterProxy::from_discovered_writer_data(remote_writer, &[], &[]),
             &offered_qos,
@@ -1189,9 +1206,10 @@ impl DPEventLoop {
       #[cfg(feature = "security")]
       if let Some(plugins_handle) = self.security_plugins_opt.as_ref() {
         // Security is enabled. Unregister the reader with the crypto plugin.
-        // Currently the unregister method is called for every reader, and errors are
-        // ignored. If this is inconvenient, add a check if the reader has been
-        // registered/is secure, and unregister only if it is so
+        // Currently the unregister method is called for every reader, and
+        // errors are ignored. If this is inconvenient, add a check if
+        // the reader has been registered/is secure, and unregister only
+        // if it is so
         let _ = plugins_handle
           .get_plugins()
           .unregister_local_reader(&reader_guid);
@@ -1214,9 +1232,9 @@ impl DPEventLoop {
     );
 
     // Same-host loopback feature (gated by the `same_host_loopback` knob):
-    // - the built-in SPDP writer additionally announces to the localhost SPDP peers
-    //   so same-host participants discover each other with no external network / no
-    //   loopback multicast;
+    // - the built-in SPDP writer additionally announces to the localhost SPDP
+    //   peers so same-host participants discover each other with no external
+    //   network / no loopback multicast;
     // - every writer may route a confirmed same-host peer over loopback.
     // See `src/rtps/loopback_same_host_design.md`.
     new_writer.set_prefer_loopback_same_host(self.same_host_loopback);
@@ -1256,9 +1274,10 @@ impl DPEventLoop {
       #[cfg(feature = "security")]
       if let Some(plugins_handle) = self.security_plugins_opt.as_ref() {
         // Security is enabled. Unregister the writer with the crypto plugin.
-        // Currently the unregister method is called for every writer, and errors are
-        // ignored. If this is inconvenient, add a check if the writer has been
-        // registered/is secure, and unregister only if it is so
+        // Currently the unregister method is called for every writer, and
+        // errors are ignored. If this is inconvenient, add a check if
+        // the writer has been registered/is secure, and unregister only
+        // if it is so
         let _ = plugins_handle
           .get_plugins()
           .unregister_local_writer(writer_guid);
@@ -1295,7 +1314,8 @@ impl DPEventLoop {
         }
       }
       Some(AuthenticationStatus::Authenticating) => {
-        // The following call should connect the endpoints used for authentication
+        // The following call should connect the endpoints used for
+        // authentication
         self.update_participant(remote_guidp);
       }
       Some(AuthenticationStatus::Rejected) => {
@@ -1361,8 +1381,9 @@ fn check_are_endpoints_securities_compatible(
     // between the local and remote setting for the EndpointSecurityInfo shall
     // ignore the attribute"
 
-    // TODO: Does it actually make sense to ignore the masks if they're not valid?
-    // Seems a bit strange. Currently we require that all masks are valid
+    // TODO: Does it actually make sense to ignore the masks if they're not
+    // valid? Seems a bit strange. Currently we require that all masks are
+    // valid
     false
   }
 }

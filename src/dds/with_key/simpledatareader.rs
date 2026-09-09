@@ -386,9 +386,10 @@ where
 
         // // Debug sanity check:
         // use crate::Duration;
-        // if Timestamp::now().duration_since(timestamp) > Duration::from_secs(1) {
-        //   error!("Sample delayed by {:?} , Topic = {} {:?}",
-        //     Timestamp::now().duration_since(timestamp), self.topic().name(),
+        // if Timestamp::now().duration_since(timestamp) >
+        // Duration::from_secs(1) {   error!("Sample delayed by {:?} ,
+        // Topic = {} {:?}",     Timestamp::now().
+        // duration_since(timestamp), self.topic().name(),
         //     sequence_number,
         //      );
         // }
@@ -612,9 +613,9 @@ where
         // 3. if nothing still, return pending.
 
         // // DEBUG
-        // if self.simple_datareader.guid().entity_id.entity_kind.is_user_defined() {
-        //   error!("Setting waker for {:?}", self.simple_datareader.topic().name());
-        // }
+        // if self.simple_datareader.guid().entity_id.entity_kind.
+        // is_user_defined() {   error!("Setting waker for {:?}",
+        // self.simple_datareader.topic().name()); }
         // // DEBUG
         self.simple_datareader.set_waker(Some(cx.waker().clone()));
         match self

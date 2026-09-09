@@ -494,7 +494,8 @@ impl<'a, C: Context> Readable<'a, C> for DataHolder {
     let class_id: StringWithNul = reader.read_value()?;
 
     read_pad(reader, class_id.len(), 4)?; // pad according to previous read
-                                          // We can use this Qos reader, because it has identical structure.
+                                          // We can use this Qos reader, because
+                                          // it has identical structure.
     let qos::policy::Property {
       value,
       binary_value,

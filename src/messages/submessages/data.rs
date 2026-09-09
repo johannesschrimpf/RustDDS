@@ -79,10 +79,10 @@ impl Data {
     // writerSN (8) = 20 bytes
     // of which 16 bytes is after octetsToInlineQos field.
     let rtps_v23_data_header_size: u16 = 16;
-    // ... and octets_to_inline_qos must be at least this much, or otherwise inline
-    // Qos (or in case it is absent, the following SerializedPayload) would
-    // overlap with the rtps_v23_data_header fields (readerId, writerId, and
-    // writerSN).
+    // ... and octets_to_inline_qos must be at least this much, or otherwise
+    // inline Qos (or in case it is absent, the following SerializedPayload)
+    // would overlap with the rtps_v23_data_header fields (readerId,
+    // writerId, and writerSN).
     if octets_to_inline_qos < rtps_v23_data_header_size {
       return Err(io::Error::new(
         io::ErrorKind::InvalidData,
@@ -94,9 +94,9 @@ impl Data {
     // https://github.com/jhelovuo/RustDDS/issues/277
     if octets_to_inline_qos > rtps_v23_data_header_size {
       let extra_octets = octets_to_inline_qos - rtps_v23_data_header_size;
-      // There may be some extra data between writerSN and inlineQos, if the header is
-      // extended in future versions. But as of RTPS v2.3 , extra_octets should be
-      // always zero.
+      // There may be some extra data between writerSN and inlineQos, if the
+      // header is extended in future versions. But as of RTPS v2.3 ,
+      // extra_octets should be always zero.
 
       // Nevertheless, skip over that extra data, if we are told such exists.
       cursor.set_position(cursor.position() + u64::from(extra_octets));
@@ -184,14 +184,15 @@ impl Data {
 
 impl<C: Context> Writable<C> for Data {
   fn write_to<T: ?Sized + Writer<C>>(&self, writer: &mut T) -> Result<(), C::Error> {
-    // This version of the protocol (2.3) should set all the bits in the extraFlags
-    // to zero
+    // This version of the protocol (2.3) should set all the bits in the
+    // extraFlags to zero
     writer.write_u16(0)?;
-    // The octetsToInlineQos field contains the number of octets starting from the
-    // first octet immediately following this field until the first octet of the
-    // inlineQos SubmessageElement. If the inlineQos SubmessageElement is not
-    // present (i.e., the InlineQosFlag is not set), then octetsToInlineQos contains
-    // the offset to the next field after the inlineQos.
+    // The octetsToInlineQos field contains the number of octets starting from
+    // the first octet immediately following this field until the first
+    // octet of the inlineQos SubmessageElement. If the inlineQos
+    // SubmessageElement is not present (i.e., the InlineQosFlag is not
+    // set), then octetsToInlineQos contains the offset to the next field
+    // after the inlineQos.
     writer.write_u16(16)?;
 
     writer.write_value(&self.reader_id)?;

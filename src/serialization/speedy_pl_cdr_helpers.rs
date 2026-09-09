@@ -78,8 +78,8 @@ impl From<StringWithNul> for String {
 impl<C: Context> Writable<C> for StringWithNul {
   #[inline]
   fn write_to<T: ?Sized + Writer<C>>(&self, writer: &mut T) -> std::result::Result<(), C::Error> {
-    // TODO: How should we fail if someone tries to serialize string longer than 4
-    // GBytes? RTPS does not support that.
+    // TODO: How should we fail if someone tries to serialize string longer than
+    // 4 GBytes? RTPS does not support that.
 
     // TODO: Should align to 4 before writing
     writer.write_u32((self.string.len() + 1).try_into().unwrap())?; // +1 for NUL character

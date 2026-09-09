@@ -33,8 +33,8 @@ fn main() {
   // DDS specification)
   let publisher = domain_participant.create_publisher(&qos).unwrap();
 
-  // Some DDS Topic that we can write and read from (basically only binds readers
-  // and writers together)
+  // Some DDS Topic that we can write and read from (basically only binds
+  // readers and writers together)
   let some_topic = domain_participant
     .create_topic(
       "counter".to_string(),

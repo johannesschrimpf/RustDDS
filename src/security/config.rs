@@ -143,8 +143,8 @@ impl DomainParticipantSecurityConfigFiles {
           ref hsm_access_library,
         } => {
           // for example
-          // pkcs11:object=my_private_key_name?pin-value=OpenSesame&module-path=/usr/lib/
-          // libhsm.so
+          // pkcs11:object=my_private_key_name?pin-value=OpenSesame&
+          // module-path=/usr/lib/ libhsm.so
           let mut pkcs11_uri = format!("pkcs11:object={token_label}");
           if let Some(pin) = token_pin {
             pkcs11_uri.push_str(&format!(

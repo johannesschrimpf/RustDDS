@@ -219,8 +219,8 @@ impl RtpsWriterProxy {
       self.advance_ack_base();
     }
 
-    // Bound the map even when ack_base cannot advance (best-effort loss leaves a
-    // permanent gap below the newly received sample).
+    // Bound the map even when ack_base cannot advance (best-effort loss leaves
+    // a permanent gap below the newly received sample).
     self.enforce_change_map_cap();
   }
 
@@ -259,8 +259,8 @@ impl RtpsWriterProxy {
     // If remove_from <= self.ack_base, then we may proceed by moving
     // ack_base to remove_until_before and clearing "changes" before that.
     //
-    // Else (remove_from > self.ack_base), which means we must insert not_available
-    // markers to "changes".
+    // Else (remove_from > self.ack_base), which means we must insert
+    // not_available markers to "changes".
     //
     if remove_from <= self.ack_base {
       let mut removed_and_after = self.changes.split_off(&remove_from);
@@ -271,8 +271,8 @@ impl RtpsWriterProxy {
       if remove_until_before > self.ack_base {
         // Move the base to skip the irrelevant changes
         self.ack_base = remove_until_before;
-        // The new base might be a sample that we already have, move the base forward
-        // until we hit a missing one
+        // The new base might be a sample that we already have, move the base
+        // forward until we hit a missing one
         self.advance_ack_base();
       }
 
@@ -351,36 +351,39 @@ impl RtpsWriterProxy {
         break;
       }
 
-      // The changes cache contains a string of consecutive sequence numbers from
-      // ack_base-1 up to test_sn (excluded), so ack_base can be set to test_sn
+      // The changes cache contains a string of consecutive sequence numbers
+      // from ack_base-1 up to test_sn (excluded), so ack_base can be set
+      // to test_sn
       self.ack_base = test_sn;
     }
 
     // Entries strictly below ack_base are already accounted for (received or
     // not_available) and are never read again: `missing_seqnums` starts at
     // max(hb_first, ack_base) and `should_ignore_change` treats anything below
-    // ack_base as handled regardless of the map. Historically these entries were
-    // only cleaned by HEARTBEAT/GAP, which best-effort writers never send, so
-    // the map grew by one entry per received sample. Drop them eagerly here.
+    // ack_base as handled regardless of the map. Historically these entries
+    // were only cleaned by HEARTBEAT/GAP, which best-effort writers never
+    // send, so the map grew by one entry per received sample. Drop them
+    // eagerly here.
     self.prune_below_ack_base();
   }
 
   // Drop tracked changes below ack_base (they are already accounted for).
   fn prune_below_ack_base(&mut self) {
-    // Only touch the map when there is actually something below ack_base to drop
-    // (the common stalled-gap case has nothing below ack_base, so we skip the
-    // split_off entirely and keep the receive path cheap).
+    // Only touch the map when there is actually something below ack_base to
+    // drop (the common stalled-gap case has nothing below ack_base, so we
+    // skip the split_off entirely and keep the receive path cheap).
     if matches!(self.changes.keys().next(), Some(&first) if first < self.ack_base) {
-      // split_off returns everything from the key onward; keep that, drop the rest.
+      // split_off returns everything from the key onward; keep that, drop the
+      // rest.
       self.changes = self.changes.split_off(&self.ack_base);
     }
   }
 
   // Memory-safety backstop: under best-effort loss `ack_base` can stall at a
-  // permanently missing sample while received sequence numbers pile up above it,
-  // so pruning below ack_base is not enough. When the map exceeds the cap, force
-  // ack_base past the oldest tracked change (giving up on the stalled gap as
-  // lost) so the map cannot grow without bound.
+  // permanently missing sample while received sequence numbers pile up above
+  // it, so pruning below ack_base is not enough. When the map exceeds the
+  // cap, force ack_base past the oldest tracked change (giving up on the
+  // stalled gap as lost) so the map cannot grow without bound.
   fn enforce_change_map_cap(&mut self) {
     while self.changes.len() > MAX_TRACKED_CHANGES_PER_WRITER {
       let oldest = match self.changes.keys().next() {
@@ -417,8 +420,8 @@ mod bounded_map_tests {
   }
 
   // Regression: a best-effort writer sends no HEARTBEAT/GAP, so the changes map
-  // used to accumulate one entry per received sample forever. With eager pruning
-  // below ack_base, contiguous delivery must keep the map ~empty.
+  // used to accumulate one entry per received sample forever. With eager
+  // pruning below ack_base, contiguous delivery must keep the map ~empty.
   #[test]
   fn changes_map_does_not_grow_on_contiguous_delivery() {
     let mut wp = test_proxy();
@@ -436,8 +439,8 @@ mod bounded_map_tests {
   }
 
   // Regression: with a permanently missing sample (best-effort loss) ack_base
-  // stalls, so pruning below it is not enough. The hard cap must still bound the
-  // map by giving up on the stalled gap.
+  // stalls, so pruning below it is not enough. The hard cap must still bound
+  // the map by giving up on the stalled gap.
   #[test]
   fn changes_map_bounded_with_permanent_gap() {
     let mut wp = test_proxy();

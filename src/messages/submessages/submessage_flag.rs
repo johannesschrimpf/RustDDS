@@ -21,7 +21,8 @@ macro_rules! submessageflag_impls {
 
     impl $t {
       // This returns representation identifier, assuming it is ordinary CDR
-      #[allow(dead_code)] // allowing dead code, as it is auto-generated for each flag type.
+      #[allow(dead_code)] // allowing dead code, as it is auto-generated for each
+                          // flag type.
       pub fn cdr_representation_identifier(bfs: BitFlags<$t>) -> RepresentationIdentifier {
         if bfs.contains($t::Endianness) {
           RepresentationIdentifier::CDR_LE

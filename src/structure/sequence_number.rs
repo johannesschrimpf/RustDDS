@@ -449,8 +449,8 @@ where
     let bitmap_base: N = reader.read_value()?;
     let num_bits: u32 = reader.read_value()?;
     if num_bits > 256 {
-      // Set size check accoring to RTPS spec v2.5 Section "8.3.5.5 SequenceNumberSet"
-      // and "8.3.5.7 FragmentNumberSet"
+      // Set size check accoring to RTPS spec v2.5 Section "8.3.5.5
+      // SequenceNumberSet" and "8.3.5.7 FragmentNumberSet"
       //
       // Without this chek the addition operation below could overflow.
       Err(speedy::Error::custom(format!("NumberSet size too large: {num_bits} > 256.")).into())
@@ -520,7 +520,8 @@ where
   fn next(&mut self) -> Option<Self::Item> {
     // TODO: This probably could made faster with the std function
     // .leading_zeroes() in type u32 to do several iterations of the loop in
-    // one step, given that we have clz as a machine instruction or short sequence.
+    // one step, given that we have clz as a machine instruction or short
+    // sequence.
     while self.at_bit < self.rev_at_bit {
       // bit indexing formula from RTPS spec v2.3 Section 9.4.2.6
       let have_one =

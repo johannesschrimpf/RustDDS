@@ -137,8 +137,10 @@ impl LocalEntityAccessControl for AccessControlBuiltin {
     topic_name: String,
     _qos: &QosPolicies,
   ) -> SecurityResult<bool> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from PartitionQosPolicy
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from DataTagQosPolicy
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // PartitionQosPolicy
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // DataTagQosPolicy
     self.check_entity(
       permissions_handle,
       domain_id,
@@ -156,8 +158,10 @@ impl LocalEntityAccessControl for AccessControlBuiltin {
     topic_name: String,
     _qos: &QosPolicies,
   ) -> SecurityResult<bool> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from PartitionQosPolicy
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from DataTagQosPolicy
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // PartitionQosPolicy
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // DataTagQosPolicy
     self.check_entity(
       permissions_handle,
       domain_id,
@@ -175,8 +179,10 @@ impl LocalEntityAccessControl for AccessControlBuiltin {
     topic_name: String,
     _qos: &QosPolicies,
   ) -> SecurityResult<bool> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from PartitionQosPolicy
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from DataTagQosPolicy
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // PartitionQosPolicy
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // DataTagQosPolicy
     self.check_entity(
       permissions_handle,
       domain_id,

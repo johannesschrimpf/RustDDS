@@ -257,7 +257,8 @@ impl Rule {
     });
     let publish: Result<Vec<Criterion>, ConfigError> = publish.map(Criterion::from_xml).collect();
     let publish = publish?;
-    let (_, rest) = rest.split_at(publish.len()); // panics if publish.len() > rest.len(), so should not panic.
+    // panics if publish.len() > rest.len(), so should not panic.
+    let (_, rest) = rest.split_at(publish.len());
 
     let subscribe = rest.iter().map_while(|re| match re {
       xml::RuleElement::Subscribe(c) => Some(c),

@@ -502,7 +502,8 @@ mod tests {
     let domain = 0;
     let own = 2;
     let peers = localhost_spdp_peer_locators(domain, own, 4);
-    // pids 0,1,3 (not 2), all on 127.0.0.1 at the well-known SPDP unicast ports.
+    // pids 0,1,3 (not 2), all on 127.0.0.1 at the well-known SPDP unicast
+    // ports.
     let expected: Vec<Locator> = [0u16, 1, 3]
       .iter()
       .map(|pid| {

@@ -65,8 +65,8 @@ impl Message {
   /// exactly mirroring the generic `Submessage::write_to`.
   pub(crate) fn write_to_vec_fast(&self, endianness: Endianness) -> Result<Vec<u8>, speedy::Error> {
     // Capacity hint only: `content_length` already includes the 4-byte payload
-    // padding (see `Data::len_serialized`). If it were ever off the `Vec` simply
-    // grows, so correctness does not depend on it being exact.
+    // padding (see `Data::len_serialized`). If it were ever off the `Vec`
+    // simply grows, so correctness does not depend on it being exact.
     let total = RTPS_MESSAGE_HEADER_SIZE
       + self
         .submessages
@@ -412,8 +412,8 @@ impl MessageBuilder {
     self
   }
 
-  // This whole MessageBuilder structure should be refactored into something more
-  // coherent. Now it just looks messy.
+  // This whole MessageBuilder structure should be refactored into something
+  // more coherent. Now it just looks messy.
   #[allow(clippy::too_many_arguments)]
   #[allow(clippy::too_many_arguments)]
   pub fn data_frag_msg(
@@ -444,10 +444,10 @@ impl MessageBuilder {
         error!(
           "data_frag_msg: Called with DDSData::DisposeByKeyHash. This is not legit! Discarding."
         );
-        // DataFrag must contain either data or key payload, disposing by key hash
-        // sent in inline QoS (without key or data) is not possible like in Data
-        // submessages. See e.g. RTPS spec v2.5 Table 8.42 in Section "8.3.8.3
-        // DataFrag"
+        // DataFrag must contain either data or key payload, disposing by key
+        // hash sent in inline QoS (without key or data) is not possible
+        // like in Data submessages. See e.g. RTPS spec v2.5 Table 8.42
+        // in Section "8.3.8.3 DataFrag"
         return self;
       }
     }
@@ -476,8 +476,8 @@ impl MessageBuilder {
 
     let have_inline_qos = !param_list.is_empty(); // we need this later also
 
-    // fragments are numbered starting from 1, not 0. This submessage carries the
-    // contiguous run [start, start + K) of fragments, i.e. up to
+    // fragments are numbered starting from 1, not 0. This submessage carries
+    // the contiguous run [start, start + K) of fragments, i.e. up to
     // `fragments_in_submessage * fragment_size` payload bytes (the final run is
     // shorter when it reaches the end of the sample).
     let from_byte: usize = (usize::from(fragment_starting_num) - 1) * usize::from(fragment_size);
@@ -592,10 +592,10 @@ impl MessageBuilder {
   ) -> Self {
     match (irrelevant_sns.first(), irrelevant_sns.last()) {
       (Some(&gap_start), Some(&_last_sn)) => {
-        // Determine the contiguous range of irrelevant seqnums starting from gap_start.
-        // Do this by finding the first seqnum which is larger than gap_start but is not
-        // included in irrelevant_sns. That is, find the
-        // exclusive endpoint of the contiguous range.
+        // Determine the contiguous range of irrelevant seqnums starting from
+        // gap_start. Do this by finding the first seqnum which is
+        // larger than gap_start but is not included in irrelevant_sns.
+        // That is, find the exclusive endpoint of the contiguous range.
         let mut range_endpoint_excl = gap_start.plus_1();
         while irrelevant_sns.contains(&range_endpoint_excl) {
           range_endpoint_excl = range_endpoint_excl.plus_1();
@@ -861,8 +861,8 @@ mod tests {
   fn rtps_message_infoDST_infoTS_Data_w_heartbeat() {
     // captured with wireshark from shapes demo.
     // rtps packet with InfoDST InfoTS Data(w) Heartbeat
-    // This datamessage serialized payload maybe contains topic name (square) and
-    // its type (shapetype) look https://www.omg.org/spec/DDSI-RTPS/2.3/PDF page 185
+    // This datamessage serialized payload maybe contains topic name (square)
+    // and its type (shapetype) look https://www.omg.org/spec/DDSI-RTPS/2.3/PDF page 185
     let bits1 = Bytes::from_static(&[
       0x52, 0x54, 0x50, 0x53, 0x02, 0x03, 0x01, 0x0f, 0x01, 0x0f, 0x99, 0x06, 0x78, 0x34, 0x00,
       0x00, 0x01, 0x00, 0x00, 0x00, 0x0e, 0x01, 0x0c, 0x00, 0x01, 0x03, 0x00, 0x0c, 0x29, 0x2d,
@@ -915,7 +915,8 @@ mod tests {
 
   #[test]
   fn write_to_vec_fast_matches_generic() {
-    // Capture containing INFO_DST, INFO_TS, DATA(w) (with payload) and HEARTBEAT.
+    // Capture containing INFO_DST, INFO_TS, DATA(w) (with payload) and
+    // HEARTBEAT.
     let bits = Bytes::from_static(&[
       0x52, 0x54, 0x50, 0x53, 0x02, 0x03, 0x01, 0x0f, 0x01, 0x0f, 0x99, 0x06, 0x78, 0x34, 0x00,
       0x00, 0x01, 0x00, 0x00, 0x00, 0x0e, 0x01, 0x0c, 0x00, 0x01, 0x03, 0x00, 0x0c, 0x29, 0x2d,

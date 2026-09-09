@@ -107,15 +107,16 @@ where
       .keyed_simpledatareader
       .as_async_stream_with(DecodeWrapper::new(decoder))
       .filter_map(move |r| async {
-        // This is Stream::filter_map, so returning None means just skipping Item.
+        // This is Stream::filter_map, so returning None means just skipping
+        // Item.
         match r {
           Err(e) => Some(Err(e)),
           Ok(kdcc) => match DeserializedCacheChange::<D>::from_keyed(kdcc) {
             None => {
               info!("Got dispose from no_key topic.");
-              // This means there is some disgreement over the kind of this Topic between
-              // us and some Writer. They must think it is WITH_KEY, since they sent a
-              // Dispose.
+              // This means there is some disgreement over the kind of this
+              // Topic between us and some Writer. They must think
+              // it is WITH_KEY, since they sent a Dispose.
               None
             }
             Some(dcc) => Some(Ok(dcc)),

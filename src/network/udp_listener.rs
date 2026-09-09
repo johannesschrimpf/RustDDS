@@ -32,7 +32,8 @@ pub struct PacketOrigin {
 
 impl PacketOrigin {
   /// An origin with no captured metadata (forces the legacy send fallback).
-  #[allow(dead_code)] // Used by tests and the loopback path; harmless if unused in a given build.
+  #[allow(dead_code)] // Used by tests and the loopback path; harmless if unused
+                      // in a given build.
   pub const UNKNOWN: Self = Self {
     source: None,
     local_if: None,
@@ -40,7 +41,8 @@ impl PacketOrigin {
 }
 
 const MAX_MESSAGE_SIZE: usize = 64 * 1024; // This is max we can get from UDP.
-const MESSAGE_BUFFER_ALLOCATION_CHUNK: usize = 256 * 1024; // must be >= MAX_MESSAGE_SIZE
+const MESSAGE_BUFFER_ALLOCATION_CHUNK: usize = 256 * 1024; // must be >=
+                                                           // MAX_MESSAGE_SIZE
 static_assertions::const_assert!(MESSAGE_BUFFER_ALLOCATION_CHUNK > MAX_MESSAGE_SIZE);
 
 /// Listens to messages coming to specified host port combination.
@@ -90,8 +92,9 @@ impl UDPListener {
       // SO_RCVBUF to a per-socket ceiling (macOS: `kern.ipc.maxsockbuf`, which
       // defaults to 8 MiB; Linux: `net.core.rmem_max`). Note Linux reports back
       // ~2x the requested value (bookkeeping overhead). Warn only when the
-      // effective size is materially below what we asked for, so silent clamping
-      // that can cause packet loss under load is visible in the logs.
+      // effective size is materially below what we asked for, so silent
+      // clamping that can cause packet loss under load is visible in the
+      // logs.
       match raw_socket.recv_buffer_size() {
         Ok(effective) => {
           if effective < recv_buffer_size {
@@ -357,20 +360,22 @@ impl UDPListener {
       };
       // Something was received.
       // The buffer length is still MAX_MESSAGE_SIZE, set before the receive so
-      // the kernel had room to write into. Shrink it back to the number of bytes
-      // actually received, so that the padding + split below only consume this
-      // datagram's worth of the chunk. Without this, every datagram (however
-      // small) would carve off a full MAX_MESSAGE_SIZE slot, wasting the chunk
-      // and defeating the packing this alignment logic assumes.
+      // the kernel had room to write into. Shrink it back to the number of
+      // bytes actually received, so that the padding + split below only
+      // consume this datagram's worth of the chunk. Without this, every
+      // datagram (however small) would carve off a full MAX_MESSAGE_SIZE
+      // slot, wasting the chunk and defeating the packing this alignment
+      // logic assumes.
       unsafe {
         // Safe: recv_one wrote `nbytes` valid bytes at the front of the buffer,
         // and nbytes <= MAX_MESSAGE_SIZE == the current len.
         self.receive_buffer.set_len(nbytes);
       }
 
-      // Now, append some extra data to align the buffer end, so the next piece will
-      // be aligned also. This assumes that the initial buffer was aligned to begin
-      // with. This is because RTPS data is optimized to align to 4-byte boundaries.
+      // Now, append some extra data to align the buffer end, so the next piece
+      // will be aligned also. This assumes that the initial buffer was
+      // aligned to begin with. This is because RTPS data is optimized to
+      // align to 4-byte boundaries.
       let pad = padding_needed_for_alignment_4(self.receive_buffer.len());
       if pad != 0 {
         self
@@ -512,7 +517,8 @@ mod tests {
 
     let rec_data = listener.get_message();
 
-    assert_eq!(rec_data.len(), 5); // It appears that this test may randomly fail.
+    assert_eq!(rec_data.len(), 5); // It appears that this test may randomly
+                                   // fail.
     assert_eq!(rec_data, data);
   }
 

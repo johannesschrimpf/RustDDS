@@ -196,10 +196,11 @@ impl TopicCache {
         max_samples_per_instance: 64,
       })
       .max_samples;
-    // TODO: We cannot currently keep track of instance counts, because TopicCache
-    // or DDSCache below do not know about instances.
+    // TODO: We cannot currently keep track of instance counts, because
+    // TopicCache or DDSCache below do not know about instances.
 
-    // If a definite minimum is specified, increase resource limit to at least that.
+    // If a definite minimum is specified, increase resource limit to at least
+    // that.
     let max_keep_samples = match min_keep_samples {
       History::KeepLast { depth: n } if n > max_keep_samples => n,
       _ => max_keep_samples,
@@ -265,7 +266,8 @@ impl TopicCache {
 
     // Now to the actual adding business.
     if let Some(old_instant) = self.find_by_sn(&cache_change) {
-      // Got duplicate DATA for a SN that we already have. It should be discarded.
+      // Got duplicate DATA for a SN that we already have. It should be
+      // discarded.
       trace!(
         "add_change: discarding duplicate {:?} from {:?}. old timestamp = {:?}, new = {:?}",
         cache_change.sequence_number,
@@ -273,15 +275,16 @@ impl TopicCache {
         old_instant,
         instant,
       );
-      // We are keeping this quiet, because e.g. FastDDS Discoery keeps sending the
-      // same SequenceNumber in periodic updates.
+      // We are keeping this quiet, because e.g. FastDDS Discoery keeps sending
+      // the same SequenceNumber in periodic updates.
       None
     } else {
-      // This is a new (to us) SequenceNumber, this is the default processing path.
-      // Ensure a strictly monotonic (hence unique) key: if the clock did not
-      // advance since the previous insert (coarse clock vs. back-to-back receives),
-      // bump by one tick so distinct samples never share a key. Keys stay ordered,
-      // so time-range reads and GC are unaffected.
+      // This is a new (to us) SequenceNumber, this is the default processing
+      // path. Ensure a strictly monotonic (hence unique) key: if the
+      // clock did not advance since the previous insert (coarse clock vs.
+      // back-to-back receives), bump by one tick so distinct samples
+      // never share a key. Keys stay ordered, so time-range reads and GC
+      // are unaffected.
       let key = if *instant > self.last_added_instant {
         *instant
       } else {
@@ -291,8 +294,9 @@ impl TopicCache {
 
       self.insert_sn(key, &cache_change);
       self.changes.insert(key, cache_change).inspect(|old_cc| {
-        // Should be unreachable now that keys are strictly monotonic, but keep the
-        // guard rather than silently overwriting if the invariant is ever broken.
+        // Should be unreachable now that keys are strictly monotonic, but keep
+        // the guard rather than silently overwriting if the invariant
+        // is ever broken.
         error!("DDSHistoryCache already contained element with key {key:?} !!!");
         self.remove_sn(old_cc);
       })
@@ -408,10 +412,11 @@ impl TopicCache {
   /// If we are over `self.max_keep_samples`, then remove the oldest samples
   /// until `max_keep_samples` is reached, regardless of `remove_before`.
   pub fn remove_changes_before(&mut self, remove_before: Timestamp) {
-    // TODO: Currently, TopicCache does not know about Keys is Samples/CacheChanges,
-    // because they are opaque binary blobs at this point. Therefore, we cannot
-    // distinguish between instances, so cannot observe max instance counts.
-    // We have to do just with min/max sample counts.
+    // TODO: Currently, TopicCache does not know about Keys is
+    // Samples/CacheChanges, because they are opaque binary blobs at this
+    // point. Therefore, we cannot distinguish between instances, so cannot
+    // observe max instance counts. We have to do just with min/max sample
+    // counts.
 
     let sample_count = self.changes.len();
 
@@ -444,9 +449,9 @@ impl TopicCache {
       .next() // the next element would be the first to retain
       .copied();
 
-    // In case `.next()` is `None`, then we just decided to to discard everything,
-    // or, as a special case, the cache was empty to begin with, but the end
-    // result is the same.
+    // In case `.next()` is `None`, then we just decided to to discard
+    // everything, or, as a special case, the cache was empty to begin with,
+    // but the end result is the same.
 
     let to_retain = if let Some(split_key) = oldest_timestamp_to_retain_opt {
       // split_off: Returns everything after the given key, including the key.

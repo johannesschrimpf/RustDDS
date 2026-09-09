@@ -19,8 +19,10 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
     domain_id: u16,
     publication_data: &PublicationBuiltinTopicDataSecure,
   ) -> SecurityResult<bool> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from publication_data
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from publication_data
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // publication_data
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // publication_data
 
     let PublicationBuiltinTopicDataSecure {
       discovered_writer_data:
@@ -31,10 +33,11 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
       ..
     } = publication_data;
 
-    // Move the following check to validate_remote_permissions from check_remote_
-    // methods, as there we have access to the tokens: "If the PluginClassName
-    // or the MajorVersion of the local permissions_token differ from those in
-    // the remote_permissions_token, the operation shall return FALSE."
+    // Move the following check to validate_remote_permissions from
+    // check_remote_ methods, as there we have access to the tokens: "If the
+    // PluginClassName or the MajorVersion of the local permissions_token
+    // differ from those in the remote_permissions_token, the operation
+    // shall return FALSE."
 
     self.check_entity(
       permissions_handle,
@@ -53,8 +56,10 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
     domain_id: u16,
     subscription_data: &SubscriptionBuiltinTopicDataSecure,
   ) -> SecurityResult<(bool, bool)> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from publication_data
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from publication_data
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // publication_data
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // publication_data
 
     let SubscriptionBuiltinTopicDataSecure {
       discovered_reader_data:
@@ -65,8 +70,8 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
       ..
     } = subscription_data;
 
-    // This method differs from the other similar ones because of the possibility of
-    // a relay only datareader
+    // This method differs from the other similar ones because of the
+    // possibility of a relay only datareader
 
     let grant = self.get_grant(&permissions_handle)?;
     let domain_rule = self.get_domain_rule(&permissions_handle)?;
@@ -91,10 +96,11 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
       )
       .into();
 
-    // Move the following check to validate_remote_permissions from check_remote_
-    // methods, as there we have access to the tokens: "If the PluginClassName
-    // or the MajorVersion of the local permissions_token differ from those in
-    // the remote_permissions_token, the operation shall return FALSE."
+    // Move the following check to validate_remote_permissions from
+    // check_remote_ methods, as there we have access to the tokens: "If the
+    // PluginClassName or the MajorVersion of the local permissions_token
+    // differ from those in the remote_permissions_token, the operation
+    // shall return FALSE."
 
     let allow_to_fully_read = requested_access_is_unprotected || participant_has_read_access;
 
@@ -102,13 +108,13 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
       // Participant allowed to fully read the topic, relay_only has no meaning
       false
     } else {
-      // Participant is not allowed to fully read the topic. But is it allowed to
-      // relay it?
+      // Participant is not allowed to fully read the topic. But is it allowed
+      // to relay it?
       bool::from(grant.check_action(Action::Relay, domain_id, topic_name, partitions, data_tags))
     };
 
-    // check_passed = true means that participant is allowed to either fully read
-    // the topic or relay it.
+    // check_passed = true means that participant is allowed to either fully
+    // read the topic or relay it.
     let check_passed = allow_to_fully_read || relay_only;
     Ok((check_passed, relay_only))
   }
@@ -119,15 +125,18 @@ impl RemoteEntityAccessControl for AccessControlBuiltin {
     domain_id: u16,
     topic_data: &TopicBuiltinTopicData,
   ) -> SecurityResult<bool> {
-    let partitions = &[]; // Partitions currently unsupported. TODO: get from publication_data
-    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from publication_data
+    let partitions = &[]; // Partitions currently unsupported. TODO: get from
+                          // publication_data
+    let data_tags = &[]; // Data tagging currently unsupported. TODO: get from
+                         // publication_data
 
     let TopicBuiltinTopicData { name, .. } = topic_data;
 
-    // Move the following check to validate_remote_permissions from check_remote_
-    // methods, as there we have access to the tokens: "If the PluginClassName
-    // or the MajorVersion of the local permissions_token differ from those in
-    // the remote_permissions_token, the operation shall return FALSE."
+    // Move the following check to validate_remote_permissions from
+    // check_remote_ methods, as there we have access to the tokens: "If the
+    // PluginClassName or the MajorVersion of the local permissions_token
+    // differ from those in the remote_permissions_token, the operation
+    // shall return FALSE."
 
     self.check_entity(
       permissions_handle,

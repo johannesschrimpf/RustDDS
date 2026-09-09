@@ -460,8 +460,9 @@ where
     match &self.qos_policy.reliability {
       None | Some(Reliability::BestEffort) => Ok(true),
       Some(Reliability::Reliable { .. }) => {
-        // Wait until every matched reliable reader has acknowledged everything we
-        // have written so far (the current last sequence number), or we time out.
+        // Wait until every matched reliable reader has acknowledged everything
+        // we have written so far (the current last sequence number), or
+        // we time out.
         let target = self.send_buffer.last_change_sequence_number();
         Ok(self.send_buffer.wait_for_acked_through(target, max_wait))
       }
@@ -1029,7 +1030,8 @@ where
     data: D,
     write_options: WriteOptions,
   ) -> WriteResult<SampleIdentity, D> {
-    // Construct a future for an async write operation and await for its completion
+    // Construct a future for an async write operation and await for its
+    // completion
 
     let send_buffer = match SA::to_bytes(&data) {
       Ok(s) => s,

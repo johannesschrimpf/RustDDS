@@ -99,8 +99,8 @@ impl DataFrag {
     // follows "The total number of fragments to expect equals:
     // (dataSize / fragmentSize) + ((dataSize % fragmentSize) ? 1 : 0) "
     //
-    // Note: The above formula is a bit suspect, since fragmentSize == 0 seems to
-    // be allowed by the spec.
+    // Note: The above formula is a bit suspect, since fragmentSize == 0 seems
+    // to be allowed by the spec.
 
     // This is a integer division with rounding up.
     let frag_size = self.fragment_size as u32;
@@ -198,8 +198,9 @@ impl DataFrag {
     // it smells so fishy that we just drop it to avoid confusion later.
     // TODO:
     // Is there any valid use case for sending zero-sized fragments?
-    // Sending zero-sized data may be ok, but it could be sent as zero fragments of
-    // some positive size, or preferably as non-fragmented DATA submessage.
+    // Sending zero-sized data may be ok, but it could be sent as zero fragments
+    // of some positive size, or preferably as non-fragmented DATA
+    // submessage.
     if fragment_size < 1 || (fragment_size as u32) > data_size {
       return Err(io::Error::other(format!(
         "Invalid DataFrag. fragment_size={fragment_size} data_size={data_size}  Expected 1 <= \
@@ -222,8 +223,8 @@ impl DataFrag {
       serialized_payload,
     };
 
-    // fragment_starting_num strictly positive and must not exceed total number of
-    // fragments
+    // fragment_starting_num strictly positive and must not exceed total number
+    // of fragments
 
     let expected_total = datafrag.total_number_of_fragments();
     if fragment_starting_num < FragmentNumber::new(1) || fragment_starting_num > expected_total {
@@ -289,11 +290,12 @@ impl DataFrag {
 impl<C: Context> Writable<C> for DataFrag {
   fn write_to<T: ?Sized + Writer<C>>(&self, writer: &mut T) -> Result<(), C::Error> {
     writer.write_u16(0)?; // extraflags
-    writer.write_u16(28)?; // See calculation of this value in deserialization above.
-                           // We always write constant 28 here, because this implementation does not (yet)
-                           // write any fields between sampleSize ( = data_size)
-                           // and inline QoS. If some future protocol version adds fields there, then this
-                           // must be changed.
+
+    // See calculation of this value in deserialization above. We always write
+    // constant 28 here, because this implementation does not (yet) write any
+    // fields between sampleSize ( = data_size) and inline QoS. If some future
+    // protocol version adds fields there, then this must be changed.
+    writer.write_u16(28)?;
     writer.write_value(&self.reader_id)?;
     writer.write_value(&self.writer_id)?;
     writer.write_value(&self.writer_sn)?;

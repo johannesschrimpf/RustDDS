@@ -95,29 +95,31 @@ impl Authentication for AuthenticationBuiltin {
     // our identity to others. Others have similar keys.
     // * password - used for decrypting private key, if it is stored encrypted.
     // * identity_certificate - document that contains our subject_name,
-    // public half of our identity authentication public key. This is signed by the
-    // identity_ca. The purpose of the signature is that, when we send our identity
-    // certificate to other Participants, they can verify (with their copy of the CA
-    // certificate) that the given public key and subject name belong together.
-    // The Domain Governance document gives permissions to subject names, and
-    // this binding confirms that the permissions are applicable to he holder of
-    // certain public-private-key pair holders.
+    // public half of our identity authentication public key. This is signed by
+    // the identity_ca. The purpose of the signature is that, when we send
+    // our identity certificate to other Participants, they can verify (with
+    // their copy of the CA certificate) that the given public key and
+    // subject name belong together. The Domain Governance document gives
+    // permissions to subject names, and this binding confirms that the
+    // permissions are applicable to he holder of certain public-private-key
+    // pair holders.
     //
     // Validate signature of our identity_certificate with identity_ca.
     // If it does not pass, our identity certificate is useless,
     // because others would not accept it either.
     //
     // (Should also check if the certificate has been revoked.
-    // The CA certificate may have a revocation list and/or check an on-line OCSP
-    // server.)
+    // The CA certificate may have a revocation list and/or check an on-line
+    // OCSP server.)
     //
     // The returned IdentityHandle must be capable of
     // * reading this participant's public key (from identity_certificate)
-    // * performing verify and sign operations with this participant's private key
+    // * performing verify and sign operations with this participant's private
+    //   key
     // * accessing the participant GUID (candidate or adjusted??)
 
-    //TODO: These loading code snippets are too cut-and-paste. Copied from access
-    // control.
+    //TODO: These loading code snippets are too cut-and-paste. Copied from
+    // access control.
     let identity_ca = participant_qos
       .get_property(QOS_IDENTITY_CA_PROPERTY_NAME)
       .and_then(|certificate_uri| {
@@ -233,8 +235,8 @@ impl Authentication for AuthenticationBuiltin {
 
     self.local_participant_info = Some(local_participant_info);
 
-    // Generate self-shared secret and insert own data into remote_participant_infos
-    // This is done for self-authentication.
+    // Generate self-shared secret and insert own data into
+    // remote_participant_infos This is done for self-authentication.
     // Note: this is not part of the Security specification.
     let random_bytes1 = self.generate_random_32_bytes()?;
     let random_bytes2 = self.generate_random_32_bytes()?;
@@ -261,7 +263,8 @@ impl Authentication for AuthenticationBuiltin {
   fn get_identity_token(&self, handle: IdentityHandle) -> SecurityResult<IdentityToken> {
     let local_info = self.get_local_participant_info()?;
 
-    // Parameter handle needs to correspond to the handle of the local participant
+    // Parameter handle needs to correspond to the handle of the local
+    // participant
     if handle != local_info.identity_handle {
       return Err(create_security_error_and_log!(
         "The given handle does not correspond to the local identity handle"
@@ -330,7 +333,8 @@ impl Authentication for AuthenticationBuiltin {
       ));
     }
 
-    //let local_identity_token = self.get_identity_token(local_identity_handle)?;
+    //let local_identity_token =
+    // self.get_identity_token(local_identity_handle)?;
 
     if remote_identity_token.class_id() != IDENTITY_TOKEN_CLASS_ID {
       // TODO: We are really supposed to ignore differences is MinorVersion of
@@ -341,8 +345,8 @@ impl Authentication for AuthenticationBuiltin {
       ));
     }
 
-    // Since built-in authentication does not use AuthRequestMessageToken, we ignore
-    // them completely. Always return the token as None.
+    // Since built-in authentication does not use AuthRequestMessageToken, we
+    // ignore them completely. Always return the token as None.
     let auth_request_token = None;
 
     // The initial handshake state depends on the lexicographic ordering of the
@@ -351,14 +355,16 @@ impl Authentication for AuthenticationBuiltin {
     let (handshake_state, validation_outcome) =
       match local_info.guid.prefix.cmp(&remote_participant_guidp) {
         Ordering::Less => {
-          // Our GUID is lower than remote's. We should send the request to remote
+          // Our GUID is lower than remote's. We should send the request to
+          // remote
           (
             BuiltinHandshakeState::PendingRequestSend,
             ValidationOutcome::PendingHandshakeRequest,
           )
         }
         Ordering::Greater => {
-          // Our GUID is higher than remote's. We should wait for the request from remote
+          // Our GUID is higher than remote's. We should wait for the request
+          // from remote
           (
             BuiltinHandshakeState::PendingRequestMessage,
             ValidationOutcome::PendingHandshakeMessage,
@@ -551,8 +557,8 @@ impl Authentication for AuthenticationBuiltin {
       create_security_error_and_log!("Remote GUID does not comply with the spec: {e}")
     })?;
 
-    // Check which key agreement algorithm the remote has chosen & generate our own
-    // key pair
+    // Check which key agreement algorithm the remote has chosen & generate our
+    // own key pair
     let dh2_keys = if request.c_kagree_algo == *DH_MODP_KAGREE_ALGO_NAME {
       DHKeys::new_modp_keys()?
     } else if request.c_kagree_algo == *ECDH_KAGREE_ALGO_NAME {
@@ -619,8 +625,8 @@ impl Authentication for AuthenticationBuiltin {
       })?,
     );
 
-    // Spec: "Sign(Hash(C2) | Challenge2 | DH2 | Challenge1 | DH1 | Hash(C1)) )",
-    // see Table 50
+    // Spec: "Sign(Hash(C2) | Challenge2 | DH2 | Challenge1 | DH1 | Hash(C1))
+    // )", see Table 50
     let cc2_properties: Vec<BinaryProperty> = vec![
       BinaryProperty::with_propagate("hash_c2", Bytes::copy_from_slice(c2_hash.as_ref())),
       BinaryProperty::with_propagate("challenge2", Bytes::copy_from_slice(challenge2.as_ref())),
@@ -701,7 +707,8 @@ impl Authentication for AuthenticationBuiltin {
     // key pairs, which cannot be cloned. We just move the "state" out and leave
     // a dummy value behind. At the end of this function we will overwrite the
     // dummy.
-    let mut state = BuiltinHandshakeState::PendingRequestSend; // dummy to leave behind
+    let mut state = BuiltinHandshakeState::PendingRequestSend; // dummy to leave
+                                                               // behind
     std::mem::swap(&mut remote_info.handshake.state, &mut state);
 
     let local_info = self.get_local_participant_info()?;
@@ -713,8 +720,8 @@ impl Authentication for AuthenticationBuiltin {
         hash_c1,
       } => {
         // We are the initiator, and expect a reply.
-        // Result is that we produce a MassageToken (i.e. send the final message)
-        // and the handshake results (shared secret)
+        // Result is that we produce a MassageToken (i.e. send the final
+        // message) and the handshake results (shared secret)
         let reply =
           BuiltinHandshakeMessageToken::try_from(handshake_message_in)?.extract_reply()?;
 
@@ -726,9 +733,10 @@ impl Authentication for AuthenticationBuiltin {
         cert2.verify_signed_by_certificate(&local_info.identity_ca)?;
 
         // Verify that the remote GUID is as specified by the spec.
-        // Note that spec does say that this check needs to be done here. But it seems
-        // that it has just been forgotten, since otherwise only the other
-        // participant would check the other's guid (in begin_handshake_reply)
+        // Note that spec does say that this check needs to be done here. But it
+        // seems that it has just been forgotten, since otherwise only
+        // the other participant would check the other's guid (in
+        // begin_handshake_reply)
         let remote_pdata =
           discovery::spdp_participant_data::SpdpDiscoveredParticipantData::from_pl_cdr_bytes(
             &reply.c_pdata,
@@ -789,12 +797,13 @@ impl Authentication for AuthenticationBuiltin {
           debug!("Cannot compare hashes in process_handshake. Reply did not have any.");
         }
 
-        // Reconstruct signed data: C2 = Cert2, Perm2, Pdata2, Dsign_algo2, Kagree_algo2
-        // Spec: "Sign(Hash(C2) | Challenge2 | DH2 | Challenge1 | DH1 | Hash(C1)) )",
-        // see Table 50
+        // Reconstruct signed data: C2 = Cert2, Perm2, Pdata2, Dsign_algo2,
+        // Kagree_algo2 Spec: "Sign(Hash(C2) | Challenge2 | DH2 |
+        // Challenge1 | DH1 | Hash(C1)) )", see Table 50
         //
-        // Note: We already verified above that hash_c1-recomputed vs. hash_c1-stored
-        // match and hash_c2 recomputed vs received (if any) match.
+        // Note: We already verified above that hash_c1-recomputed vs.
+        // hash_c1-stored match and hash_c2 recomputed vs received (if
+        // any) match.
 
         let cc2_properties: Vec<BinaryProperty> = vec![
           BinaryProperty::with_propagate(
@@ -841,8 +850,8 @@ impl Authentication for AuthenticationBuiltin {
         let shared_secret = dh1.compute_shared_secret(reply.dh2.clone())?;
 
         // Create signature for final message:
-        // Sign( Hash(C1) | Challenge1 | DH1 | Challenge2 | DH2 | Hash(C2) ), see Table
-        // 51
+        // Sign( Hash(C1) | Challenge1 | DH1 | Challenge2 | DH2 | Hash(C2) ),
+        // see Table 51
         let cc_final_properties: Vec<BinaryProperty> = vec![
           BinaryProperty::with_propagate("hash_c1", Bytes::copy_from_slice(hash_c1.as_ref())),
           BinaryProperty::with_propagate("challenge1", Bytes::copy_from_slice(challenge1.as_ref())),
@@ -867,8 +876,9 @@ impl Authentication for AuthenticationBuiltin {
         )?;
 
         // Create HandshakeFinalMessageToken to complete handshake
-        // DDS Security spec v1.1 Section  "9.3.2.5.3 HandshakeFinalMessageToken"
-        // Table 51 defines contents of the token (message)
+        // DDS Security spec v1.1 Section  "9.3.2.5.3
+        // HandshakeFinalMessageToken" Table 51 defines contents of the
+        // token (message)
         let final_message_token = BuiltinHandshakeMessageToken {
           class_id: Bytes::copy_from_slice(HANDSHAKE_FINAL_CLASS_ID),
           c_id: None,
@@ -916,8 +926,9 @@ impl Authentication for AuthenticationBuiltin {
         remote_id_certificate,
       } => {
         // We are the responder, and expect the final message.
-        // Result is that we do not produce a MassageToken, since this was the final
-        // message, but we compute the handshake results (shared secret)
+        // Result is that we do not produce a MassageToken, since this was the
+        // final message, but we compute the handshake results (shared
+        // secret)
         let handshake_token = BuiltinHandshakeMessageToken::try_from(handshake_message_in)?;
 
         let final_token = handshake_token.extract_final()?;
@@ -955,8 +966,8 @@ impl Authentication for AuthenticationBuiltin {
           ));
         }
 
-        // "The operation shall check that the challenge1 and challenge2 match the ones
-        // that were sent on the HandshakeReplyMessageToken."
+        // "The operation shall check that the challenge1 and challenge2 match
+        // the ones that were sent on the HandshakeReplyMessageToken."
         if challenge1 != final_token.challenge1 {
           return Err(create_security_error_and_log!(
             "process_handshake: Final token challenge1 mismatch"
@@ -969,9 +980,9 @@ impl Authentication for AuthenticationBuiltin {
           ));
         }
 
-        // "The operation shall validate the digital signature in the “signature”
-        // property, according to the expected contents and algorithm described
-        // in 9.3.2.5.3." ....
+        // "The operation shall validate the digital signature in the
+        // “signature” property, according to the expected contents and
+        // algorithm described in 9.3.2.5.3." ....
         // signature for final message:
         // Sign( Hash(C1) | Challenge1 | DH1 | Challenge2 | DH2 | Hash(C2) )
         // see Table 51
@@ -985,8 +996,8 @@ impl Authentication for AuthenticationBuiltin {
           BinaryProperty::with_propagate("hash_c2", Bytes::copy_from_slice(hash_c2.as_ref())),
         ];
 
-        // Now we use the remote certificate, which we verified in the previous (request
-        // -> reply) step against CA.
+        // Now we use the remote certificate, which we verified in the previous
+        // (request -> reply) step against CA.
         let remote_signature_algo_name = remote_id_certificate.signature_algorithm_identifier()?;
         let remote_signature_algorithm =
           parse_signature_algo_name_to_ring(&remote_signature_algo_name)?;

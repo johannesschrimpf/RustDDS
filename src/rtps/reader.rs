@@ -252,10 +252,10 @@ impl Reader {
         // no-one is required to be listening to these.
       }
       Err(mio_channel::TrySendError::Disconnected(_)) => {
-        // If we get here, our DataReader has died. The Reader should now dispose
-        // itself. Or possibly it has lost the receiver object, which is sort of
-        // sloppy, but does not necessarily mean the end of the world.
-        // TODO: Implement Reader disposal.
+        // If we get here, our DataReader has died. The Reader should now
+        // dispose itself. Or possibly it has lost the receiver object,
+        // which is sort of sloppy, but does not necessarily mean the
+        // end of the world. TODO: Implement Reader disposal.
         info!("send_status_change - cannot send status, DataReader Disconnected.");
       }
       Err(mio_channel::TrySendError::Io(e)) => {
@@ -288,8 +288,8 @@ impl Reader {
     for writer_proxy in self.matched_writers.values_mut() {
       if let Some(last_change) = writer_proxy.last_change_timestamp() {
         let since_last = now.duration_since(last_change);
-        // if time singe last received message is greater than deadline increase status
-        // and return notification.
+        // if time singe last received message is greater than deadline increase
+        // status and return notification.
         trace!("Comparing deadlines: {since_last:?} - {deadline_duration:?}");
         if since_last > deadline_duration {
           debug!("Deadline missed: {since_last:?} - {deadline_duration:?}");
@@ -621,8 +621,8 @@ impl Reader {
 
     // ... and continue processing, if data was completed.
     if let Some(dds_data) = completed_dds_data {
-      // Source timestamp (if any) will be the timestamp of the last fragment (that
-      // completes the sample).
+      // Source timestamp (if any) will be the timestamp of the last fragment
+      // (that completes the sample).
       self.process_received_data(
         dds_data,
         receive_timestamp,
@@ -729,8 +729,8 @@ impl Reader {
           "handle_data_msg in stateful Reader {:?} has no writer proxy for {:?} topic={:?}",
           my_entity_id, writer_guid, self.topic_name,
         );
-        // This is normal if the DATA was broadcast, but it was from another topic.
-        // We just ignore the data in such a case
+        // This is normal if the DATA was broadcast, but it was from another
+        // topic. We just ignore the data in such a case
         // ... unless it is Discovery traffic.
         if writer_guid.entity_id.entity_kind.is_user_defined() {
           return;
@@ -784,8 +784,8 @@ impl Reader {
 
       (None, false, false) => {
         // no data, no key. Maybe there is inline QoS?
-        // At least we should find key hash, or we do not know WTF the writer is talking
-        // about
+        // At least we should find key hash, or we do not know WTF the writer is
+        // talking about
         let key_hash = if let Some(h) = data.inline_qos.as_ref().and_then(|inline_qos_parameters| {
           InlineQos::key_hash(inline_qos_parameters).unwrap_or_else(|e| {
             error!("Deserializing key_hash: {:?}", e);
@@ -796,8 +796,8 @@ impl Reader {
         } else {
           info!("Received DATA that has no payload and no key_hash inline QoS - discarding");
           // Note: This case is normal when handling coherent sets.
-          // The coherent set end marker is sent as DATA with no payload and not key, only
-          // Inline QoS.
+          // The coherent set end marker is sent as DATA with no payload and not
+          // key, only Inline QoS.
           Err("DATA with no contents".to_string())
         }?;
         // now, let's try to determine what is the dispose reason
@@ -813,7 +813,8 @@ impl Reader {
       (Some(_), true, true) => {
         // payload cannot be both key and data.
         // RTPS Spec 9.4.5.3.1 Flags in the Submessage Header says
-        // "D=1 and K=1 is an invalid combination in this version of the protocol."
+        // "D=1 and K=1 is an invalid combination in this version of the
+        // protocol."
         warn!("Got DATA that claims to be both data and key - discarding.");
         Err("Ambiguous data/key received.".to_string())
       }
@@ -856,7 +857,8 @@ impl Reader {
 
   // Returns if responding with ACKNACK?
   // TODO: Return value seems to go unused in callers.
-  // ...except in test cases, but not sure if this is strictly necessary to have.
+  // ...except in test cases, but not sure if this is strictly necessary to
+  // have.
   pub fn handle_heartbeat_msg(
     &mut self,
     heartbeat: &Heartbeat,
@@ -874,8 +876,8 @@ impl Reader {
       );
       // BestEffort Reader reacts only to DATA and GAP
       // See RTPS Spec Section "8.4.11 RTPS StatelessReader Behavior":
-      // Figure 8.23 - Behavior of the Best-Effort StatefulReader with respect to each
-      // matched Writer and
+      // Figure 8.23 - Behavior of the Best-Effort StatefulReader with respect
+      // to each matched Writer and
       // Figure 8.22 - Behavior of the Best-Effort StatelessReader
       return false;
     }
@@ -922,23 +924,25 @@ impl Reader {
         let missing_seqnums = writer_proxy.missing_seqnums(heartbeat.first_sn, heartbeat.last_sn);
 
         // Interpretation of final flag in RTPS spec
-        // 8.4.2.3.1 Readers must respond eventually after receiving a HEARTBEAT with
-        // final flag not set
+        // 8.4.2.3.1 Readers must respond eventually after receiving a HEARTBEAT
+        // with final flag not set
         //
-        // Upon receiving a HEARTBEAT Message with final flag not set, the Reader must
-        // respond with an ACKNACK Message. The ACKNACK Message may acknowledge
-        // having received all the data samples or may indicate that some data
-        // samples are missing. The response may be delayed to avoid message storms.
+        // Upon receiving a HEARTBEAT Message with final flag not set, the
+        // Reader must respond with an ACKNACK Message. The ACKNACK
+        // Message may acknowledge having received all the data samples
+        // or may indicate that some data samples are missing. The
+        // response may be delayed to avoid message storms.
 
         if !missing_seqnums.is_empty() || !final_flag_set {
           let mut partially_received = Vec::new();
           // report of what we have.
-          // We claim to have received all SNs before "base" and produce a set of missing
-          // sequence numbers that are >= base.
+          // We claim to have received all SNs before "base" and produce a set
+          // of missing sequence numbers that are >= base.
           let reader_sn_state = match missing_seqnums.first() {
             Some(&first_missing) => {
               // Here we assume missing_seqnums are returned in order.
-              // Limit the set to maximum that can be sent in acknack submessage.
+              // Limit the set to maximum that can be sent in acknack
+              // submessage.
 
               SequenceNumberSet::from_base_and_set(
                 first_missing,
@@ -973,18 +977,18 @@ impl Reader {
           //
           // Wrong. This sanity check is invalid. The condition
           // ack_base > heartbeat.last_sn + 1
-          // May be legitimately true, if there are some changes available, and a GAP
-          // after that. E.g. HEARTBEAT 1..8 and GAP 9..10. Then acknack_base == 11
-          // and 11 > 8 + 1.
+          // May be legitimately true, if there are some changes available, and
+          // a GAP after that. E.g. HEARTBEAT 1..8 and GAP 9..10. Then
+          // acknack_base == 11 and 11 > 8 + 1.
           //
           //
           // if response_ack_nack.reader_sn_state.base() > heartbeat.last_sn +
           // SequenceNumber::new(1) {   error!(
-          //     "OOPS! AckNack sanity check tripped: HEARTBEAT = {:?} ACKNACK = {:?}
-          // missing_seqnums = {:?} all_ackable_before = {:?} writer={:?}",
-          //     &heartbeat, &response_ack_nack, missing_seqnums,
-          // writer_proxy.all_ackable_before(), writer_guid,   );
-          // }
+          //     "OOPS! AckNack sanity check tripped: HEARTBEAT = {:?} ACKNACK =
+          // {:?} missing_seqnums = {:?} all_ackable_before = {:?}
+          // writer={:?}",     &heartbeat, &response_ack_nack,
+          // missing_seqnums, writer_proxy.all_ackable_before(),
+          // writer_guid,   ); }
 
           // The acknack can be sent now or later. The rest of the RTPS message
           // needs to be constructed. p. 48
@@ -1107,10 +1111,10 @@ impl Reader {
       // gapList.base
       writer_proxy.irrelevant_changes_range(gap.gap_start, gap.gap_list.base());
 
-      //   2. All the sequence numbers that appear explicitly listed in the gapList.
-      //      Note that gapList.base may or may not be included in gapList; its
-      //      inclusion is determined by the bitmap, as with the other sequence
-      //      numbers
+      //   2. All the sequence numbers that appear explicitly listed in the
+      //      gapList. Note that gapList.base may or may not be included in
+      //      gapList; its inclusion is determined by the bitmap, as with the
+      //      other sequence numbers
       for seq_num in gap.gap_list.iter() {
         writer_proxy.set_irrelevant_change(seq_num);
       }
@@ -1382,7 +1386,8 @@ impl Reader {
     }
 
     let flags = BitFlags::<ACKNACK_Flags>::from_flag(ACKNACK_Flags::Endianness);
-    // Do not set final flag --> we are requesting immediate heartbeat from writers.
+    // Do not set final flag --> we are requesting immediate heartbeat from
+    // writers.
 
     // Detach the writer proxy set. This is a way to avoid multiple &mut self
     let mut writer_proxies = std::mem::take(&mut self.matched_writers);
@@ -1727,7 +1732,8 @@ mod tests {
       &reliable_qos,
     );
 
-    // 3. Send an initial heartbeat from the new writer, reader should not respond
+    // 3. Send an initial heartbeat from the new writer, reader should not
+    //    respond
     // with acknack first_sn: 1, last_sn: 0 to indicate no samples available
     let hb_new = Heartbeat {
       reader_id: reader.entity_id(),
@@ -1748,7 +1754,8 @@ mod tests {
     };
     assert!(reader.handle_heartbeat_msg(&hb_one, false, &mr_state)); // Should send an ack_nack
 
-    // 5. Send a duplicate of the first heartbeat, reader should not respond with
+    // 5. Send a duplicate of the first heartbeat, reader should not respond
+    //    with
     // acknack
     let hb_one2 = hb_one.clone();
     assert!(!reader.handle_heartbeat_msg(&hb_one2, false, &mr_state)); // No acknack
@@ -1872,8 +1879,8 @@ mod tests {
     reader.handle_data_msg(data, data_flags, &mr_state);
 
     // 6. Verify that the writer proxy reports seqnums below 5 as ackable
-    // This should be the case since reader received data with seqnum 3 and seqnum 4
-    // was marked irrelevant before
+    // This should be the case since reader received data with seqnum 3 and
+    // seqnum 4 was marked irrelevant before
     assert_eq!(
       reader
         .matched_writer(writer_guid)
@@ -1974,7 +1981,8 @@ mod tests {
       &QosPolicies::qos_none(),
     );
 
-    // 3. Verify that the reader does not contain a writer proxy for the writer that
+    // 3. Verify that the reader does not contain a writer proxy for the writer
+    //    that
     // we attempted to add
     assert!(reader.matched_writer(writer_guid).is_none());
   }

@@ -107,7 +107,8 @@ impl Sub for Timestamp {
     let a = self.to_ticks();
     let b = other.to_ticks();
     // https://doc.rust-lang.org/1.30.0/book/first-edition/casting-between-types.html
-    // "Casting between two integers of the same size (e.g. i32 -> u32) is a no-op"
+    // "Casting between two integers of the same size (e.g. i32 -> u32) is a
+    // no-op"
     Duration::from_ticks(a.wrapping_sub(b) as i64)
   }
 }
@@ -121,8 +122,10 @@ impl Sub<Duration> for Timestamp {
       Self::INVALID
     } else {
       // https://doc.rust-lang.org/1.30.0/book/first-edition/casting-between-types.html
-      // "Casting between two integers of the same size (e.g. i32 -> u32) is a no-op"
-      let stamp_ticks = self.to_ticks() as i64; // This will overflow to negative after 2038, but...
+      // "Casting between two integers of the same size (e.g. i32 -> u32) is a
+      // no-op"
+      let stamp_ticks = self.to_ticks() as i64; // This will overflow to
+                                                // negative after 2038, but...
       let sub_ticks = rhs.to_ticks();
 
       let new_stamp_ticks = stamp_ticks.wrapping_sub(sub_ticks);

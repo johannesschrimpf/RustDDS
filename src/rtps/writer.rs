@@ -436,11 +436,12 @@ impl Writer {
     match event {
       TimedEvent::Heartbeat => {
         let readers_behind = self.handle_heartbeat_tick(false);
-        // ^^ false = This is automatic heartbeat by timer, not manual by application
-        // call.
+        // ^^ false = This is automatic heartbeat by timer, not manual by
+        // application call.
         // Adaptive period: reschedule sooner (fast) while some reader still has
-        // unacknowledged data so repair is prompted quickly, and back off to the
-        // slow period once everyone is caught up to keep idle traffic low.
+        // unacknowledged data so repair is prompted quickly, and back off to
+        // the slow period once everyone is caught up to keep idle
+        // traffic low.
         let next_period = if readers_behind {
           self.heartbeat_period_fast.or(self.heartbeat_period)
         } else {
@@ -561,7 +562,8 @@ impl Writer {
   fn num_frags_and_frag_size(&self, payload_size: usize) -> (u32, u16) {
     let fragment_size = FRAGMENT_SIZE as u32;
     let data_size = payload_size as u32; // TODO: overflow check
-                                         // Formula from RTPS spec v2.5 Section "8.3.8.3.5 Logical Interpretation"
+                                         // Formula from RTPS spec v2.5 Section
+                                         // "8.3.8.3.5 Logical Interpretation"
     let num_frags =
       (data_size / fragment_size) + u32::from(!data_size.is_multiple_of(fragment_size)); // rounding up
     debug!("Fragmenting {data_size} to {num_frags} x {fragment_size}");
@@ -631,10 +633,11 @@ impl Writer {
     // The batch back-pressures (rather than dropping) if the writer is reliable
     // or any included best-effort sample opted in to blocking.
     let mut may_block = is_reliable;
-    // Whether a preceding INFO_TS in this datagram is still "active". An INFO_TS
-    // applies to every following DATA until the next INFO_TS, so a timestamped
-    // sample followed by a non-timestamped one must emit an invalidating INFO_TS
-    // to avoid the latter inheriting the former's timestamp.
+    // Whether a preceding INFO_TS in this datagram is still "active". An
+    // INFO_TS applies to every following DATA until the next INFO_TS, so a
+    // timestamped sample followed by a non-timestamped one must emit an
+    // invalidating INFO_TS to avoid the latter inheriting the former's
+    // timestamp.
     let mut ts_active = false;
 
     let mut seq = first_seq;
@@ -671,10 +674,10 @@ impl Writer {
         self.security_plugins.as_ref(),
       );
 
-      // Always include the first sample (even if it alone exceeds the budget, so
-      // we make progress); otherwise stop before overflowing the datagram. The
-      // budget is the minimum per-peer path-MTU over all matched readers, since
-      // this datagram is multicast to all of them.
+      // Always include the first sample (even if it alone exceeds the budget,
+      // so we make progress); otherwise stop before overflowing the
+      // datagram. The budget is the minimum per-peer path-MTU over all
+      // matched readers, since this datagram is multicast to all of them.
       if count > 0
         && builder.len_serialized() + sample.submessage_bytes_len() + hb_reserve
           > self.min_datagram_payload
@@ -724,9 +727,10 @@ impl Writer {
   }
 
   pub fn process_pending(&mut self) {
-    // Reset the doorbell to empty *before* reading the buffer state, so that any
-    // sample admitted concurrently re-arms the (edge-triggered) doorbell and we
-    // are woken again. The shared buffer's `last_seq` is the source of truth.
+    // Reset the doorbell to empty *before* reading the buffer state, so that
+    // any sample admitted concurrently re-arms the (edge-triggered)
+    // doorbell and we are woken again. The shared buffer's `last_seq` is
+    // the source of truth.
     let _ = self.doorbell.set_readiness(Ready::empty());
 
     loop {
@@ -759,8 +763,9 @@ impl Writer {
             continue;
           }
           Some(BatchOutcome::Blocked { blocked }) => {
-            // All-or-nothing: do not advance `last_sent`; the event loop resumes
-            // us on write readiness and the batch is rebuilt from `sequence_number`.
+            // All-or-nothing: do not advance `last_sent`; the event loop
+            // resumes us on write readiness and the batch is
+            // rebuilt from `sequence_number`.
             self.blocked_sockets.extend(blocked);
             return;
           }
@@ -786,8 +791,8 @@ impl Writer {
         for reader in self.readers.values_mut() {
           reader.notify_new_cache_change(sequence_number);
 
-          // If the data is meant for a single reader only, set others as pending
-          // GAP for this sequence number.
+          // If the data is meant for a single reader only, set others as
+          // pending GAP for this sequence number.
           if let Some(single_reader_guid) = write_options.to_single_reader() {
             if reader.remote_reader_guid != single_reader_guid {
               reader.insert_pending_gap(sequence_number);
@@ -813,15 +818,17 @@ impl Writer {
             None => None,                          // Sending to all matched readers
           };
           // Built-in (discovery) writers carry low-volume, delivery-critical
-          // SEDP/SPDP data. Their initial push must not be dropped on WouldBlock:
-          // under a flat-out user writer the send socket is perpetually congested,
-          // so a dropped DiscoveredWriterData would have to be recovered by the
+          // SEDP/SPDP data. Their initial push must not be dropped on
+          // WouldBlock: under a flat-out user writer the send socket
+          // is perpetually congested, so a dropped
+          // DiscoveredWriterData would have to be recovered by the
           // reliable heartbeat/ACKNACK/repair chain - which is itself starved
           // (the shared timer barely fires under load), leaving the remote
-          // endpoint permanently undiscovered. Route discovery pushes through the
-          // never-dropped Control queue (strict priority in on_socket_writable)
-          // so discovery completes regardless of user-data congestion. User
-          // writers keep the flow-controlled Bulk path.
+          // endpoint permanently undiscovered. Route discovery pushes through
+          // the never-dropped Control queue (strict priority in
+          // on_socket_writable) so discovery completes regardless of
+          // user-data congestion. User writers keep the
+          // flow-controlled Bulk path.
           let push_class = if self.my_guid.entity_id.kind().is_built_in() {
             TrafficClass::Control
           } else {
@@ -843,10 +850,11 @@ impl Writer {
             self.mark_change_sent_to_all_readers(sequence_number);
           }
           SendProgress::Blocked { cursor, blocked } => {
-            // Reliable writers always back-pressure. Best-effort writers only if
-            // this sample opted in via `best_effort_may_block`; otherwise the
-            // DDS default applies and we drop the (rest of the) sample and move
-            // on to fresher data (spec v1.4 2.2.2.4.2.11).
+            // Reliable writers always back-pressure. Best-effort writers only
+            // if this sample opted in via `best_effort_may_block`;
+            // otherwise the DDS default applies and we drop the
+            // (rest of the) sample and move on to fresher data
+            // (spec v1.4 2.2.2.4.2.11).
             if self.is_reliable() || write_options.best_effort_may_block() {
               // Stop here; resume on write readiness. Back-pressure to the
               // application follows from `sent_frontier` not advancing.
@@ -866,8 +874,11 @@ impl Writer {
       } else {
         // Send Heartbeat only (control).
         // Readers will ask for the DATA with ACKNACK, if they are interested.
-        let final_flag = false; // false = request that readers acknowledge with ACKNACK.
-        let liveliness_flag = false; // This is not a manual liveliness assertion (DDS API call), but side-effect of
+        // false = request that readers acknowledge with ACKNACK.
+        let final_flag = false;
+        // This is not a manual liveliness assertion (DDS API call), but
+        // side-effect of
+        let liveliness_flag = false;
         let hb_message = MessageBuilder::new()
           .heartbeat_msg(
             self.entity_id(), // from Writer
@@ -1012,8 +1023,8 @@ impl Writer {
       );
       return false;
     }
-    // Reliable Stateful Writer (that tracks Readers by ReaderProxy) will not set
-    // the final flag.
+    // Reliable Stateful Writer (that tracks Readers by ReaderProxy) will not
+    // set the final flag.
     let final_flag = false;
     let liveliness_flag = is_manual_assertion; // RTPS spec "8.3.7.5 Heartbeat"
 
@@ -1058,8 +1069,8 @@ impl Writer {
         last_change,
       );
 
-      // In the volatile key exchange topic we cannot send to multiple readers by any
-      // means, so we handle that separately.
+      // In the volatile key exchange topic we cannot send to multiple readers
+      // by any means, so we handle that separately.
       if self.entity_id() == EntityId::P2P_BUILTIN_PARTICIPANT_VOLATILE_SECURE_WRITER {
         for rp in self.readers.values() {
           if last_change < rp.all_acked_before {
@@ -1134,14 +1145,16 @@ impl Writer {
 
         let my_topic = self.my_topic_name.clone(); // for debugging
 
-        // Built-in (discovery) writers must recover a missed sample promptly and
-        // independently of the shared timer: under a flat-out user writer the
-        // timer thread is CPU-starved and the deferred `SendRepairData` timeout
-        // fires late or never, so a NACKed DiscoveredWriterData is never
-        // retransmitted and the remote endpoint stays undiscovered. For built-in
-        // writers we therefore repair synchronously, right here on the ACKNACK
-        // event (which the event loop always services). Discovery is low-volume,
-        // so responding immediately (no nack-batching delay) is cheap.
+        // Built-in (discovery) writers must recover a missed sample promptly
+        // and independently of the shared timer: under a flat-out user
+        // writer the timer thread is CPU-starved and the deferred
+        // `SendRepairData` timeout fires late or never, so a NACKed
+        // DiscoveredWriterData is never retransmitted and the remote
+        // endpoint stays undiscovered. For built-in writers we
+        // therefore repair synchronously, right here on the ACKNACK
+        // event (which the event loop always services). Discovery is
+        // low-volume, so responding immediately (no nack-batching
+        // delay) is cheap.
         let repair_immediately = self.my_guid.entity_id.kind().is_built_in();
         let mut do_immediate_repair = false;
 
@@ -1151,10 +1164,11 @@ impl Writer {
           //TODO: We should drop SNs in "pending gap" from unsent changes
           reader_proxy.handle_ack_nack(ack_submessage, last_seq);
 
-          let reader_guid = reader_proxy.remote_reader_guid; // copy to avoid double mut borrow
+          // copy to avoid double mut borrow
+          let reader_guid = reader_proxy.remote_reader_guid;
 
-          // Sanity Check: if the reader asked for something we did not even advertise
-          // yet. TODO: This
+          // Sanity Check: if the reader asked for something we did not even
+          // advertise yet. TODO: This
           // checks the stored unset_changes, not presently received ACKNACK.
           if cfg!(debug_assertions) {
             if let Some(req_high) = reader_proxy.unsent_changes_iter().next_back() {
@@ -1192,9 +1206,11 @@ impl Writer {
           if reader_proxy.all_acked_before > last_seq {
             reader_proxy.repair_mode = false;
           } else {
-            reader_proxy.repair_mode = true; // TODO: Is this correct? Do we need to repair immediately?
+            reader_proxy.repair_mode = true; // TODO: Is this correct? Do we
+                                             // need to repair immediately?
             if repair_immediately {
-              // Built-in writer: repair now (see note above), not via the timer.
+              // Built-in writer: repair now (see note above), not via the
+              // timer.
               do_immediate_repair = true;
             } else {
               // set repair timer to fire
@@ -1243,7 +1259,8 @@ impl Writer {
         }
       } // AckNack
       AckSubmessage::NackFrag(ref nackfrag) => {
-        // NackFrag is negative acknowledgement only, i.e. requesting missing fragments.
+        // NackFrag is negative acknowledgement only, i.e. requesting missing
+        // fragments.
         let reader_guid = GUID::new(reader_guid_prefix, nackfrag.reader_id);
         if let Some(reader_proxy) = self.lookup_reader_proxy_mut(reader_guid) {
           reader_proxy.mark_frags_requested(nackfrag.writer_sn, &nackfrag.fragment_number_state);
@@ -1272,9 +1289,10 @@ impl Writer {
   // TODO: On first match a reader proxy can report `acked_up_to_before == 0`
   // (sequence numbers are 1-based, so the initial frontier should be >= 1), and
   // the first missed sample is only recovered via periodic-heartbeat repair,
-  // which can take ~1 s under load. This is harmless now that the send window is
-  // no longer tiny (writes pipeline instead of stalling), but the slow first-
-  // match repair and the off-by-one initial frontier are worth tidying up.
+  // which can take ~1 s under load. This is harmless now that the send window
+  // is no longer tiny (writes pipeline instead of stalling), but the slow
+  // first- match repair and the off-by-one initial frontier are worth tidying
+  // up.
   fn refresh_acked_frontier(&self) {
     if self.like_stateless {
       // Stateless-like writer is BestEffort: never throttle, never wait.
@@ -1357,26 +1375,26 @@ impl Writer {
       let mut no_longer_relevant: BTreeSet<SequenceNumber> = BTreeSet::new();
       let mut all_irrelevant_before = None;
 
-      // If we have set the reader as pending GAP for the unsent sequence number,
-      // just send a GAP message, not DATA.
+      // If we have set the reader as pending GAP for the unsent sequence
+      // number, just send a GAP message, not DATA.
       let pending_gaps = reader_proxy.get_pending_gap();
 
       // Check what we actually have in store
       let first_available = self.send_buffer.first_change_sequence_number();
       if unsent_sn < first_available {
-        // Reader is requesting older than what we actually have. Notify that they are
-        // gone.
+        // Reader is requesting older than what we actually have. Notify that
+        // they are gone.
         all_irrelevant_before = Some(first_available);
       }
 
-      // If all_irrelevant_before is still None, then TopicCache has SNs that are
-      // less than equal to the requested "unsent_sn". But might not have that exact
-      // SN.
+      // If all_irrelevant_before is still None, then TopicCache has SNs that
+      // are less than equal to the requested "unsent_sn". But might not
+      // have that exact SN.
       if pending_gaps.contains(&unsent_sn) || all_irrelevant_before.is_some() {
         no_longer_relevant.extend(pending_gaps);
       } else {
-        // Reader not pending gap on unsent_sn. Get the cache change from the send
-        // buffer
+        // Reader not pending gap on unsent_sn. Get the cache change from the
+        // send buffer
         if let Some(cc) = self.send_buffer.get_by_sn(unsent_sn) {
           // The cache change was found. Send it to the reader
           let data_was_fragmented = self.send_cache_change(&cc, false, Some(reader_proxy));
@@ -1471,8 +1489,8 @@ impl Writer {
       // ^^^ TODO
 
       if let Some(cache_change) = self.send_buffer.get_by_sn(seq_num) {
-        // If the data is meant for a single reader only, make sure it is the one we're
-        // about to send frags to.
+        // If the data is meant for a single reader only, make sure it is the
+        // one we're about to send frags to.
         if let Some(single_reader_guid) = cache_change.write_options.to_single_reader() {
           if single_reader_guid != reader_guid {
             error!(
@@ -1564,8 +1582,9 @@ impl Writer {
       // backstop below still bounds memory if a reader falls hopelessly behind.
       min(depth_keeper, acked_by_all_readers)
     } else {
-      // Stateless-like writer currently supports only BestEffort behavior, so here we
-      // make it explicit that it does not care about acked sequence numbers
+      // Stateless-like writer currently supports only BestEffort behavior, so
+      // here we make it explicit that it does not care about acked
+      // sequence numbers
       let depth = depth.unwrap_or(0);
       max(
         self.send_buffer.last_change_sequence_number() - SequenceNumber::from(depth),
@@ -1668,9 +1687,9 @@ impl Writer {
     // so reachability is preserved.
 
     // Only the security path needs the readers materialized into a slice (to
-    // pass to `security_encode`). In the default (non-security) build we iterate
-    // the incoming iterator directly below, avoiding a per-sample Vec
-    // allocation on the send hot path.
+    // pass to `security_encode`). In the default (non-security) build we
+    // iterate the incoming iterator directly below, avoiding a per-sample
+    // Vec allocation on the send hot path.
     #[cfg(feature = "security")]
     let readers = readers.collect::<Vec<_>>();
 
@@ -1783,8 +1802,9 @@ impl Writer {
           }
         }
 
-        // Fixed extra unicast destinations (SPDP localhost peers): send the same
-        // datagram unconditionally, deduplicated against everything already sent.
+        // Fixed extra unicast destinations (SPDP localhost peers): send the
+        // same datagram unconditionally, deduplicated against
+        // everything already sent.
         send_legacy!(self.extra_unicast_destinations);
       }
       Err(e) => error!("Failed to send message to readers. Encoding failed: {e:?}"),
@@ -1803,7 +1823,8 @@ impl Writer {
     let _ = self.send_message_to_readers(preferred_mode, message, readers, TrafficClass::Control);
   }
 
-  #[allow(dead_code)] // symmetry with send_control_to_readers; reserved for future direct bulk sends
+  #[allow(dead_code)] // symmetry with send_control_to_readers; reserved for
+                      // future direct bulk sends
   fn send_bulk_to_readers(
     &self,
     preferred_mode: DeliveryMode,
@@ -1872,13 +1893,15 @@ impl Writer {
             local_writer: self.my_guid,
             remote_reader: reader_proxy.remote_reader_guid,
           });
-          // Reliable: send an initial HEARTBEAT to the newly matched reader so it
-          // can request the samples we already hold (repair/late-join). This runs
-          // synchronously on the discovery-match event in the event loop, so it
-          // does NOT depend on the periodic heartbeat timer - which is CPU-starved
-          // under a flat-out user writer, leaving the timer to fire seldom or
-          // never. Without this prompt, a reader that matches after our initial
-          // send burst is never told what we have and never NACKs, so reliable
+          // Reliable: send an initial HEARTBEAT to the newly matched reader so
+          // it can request the samples we already hold
+          // (repair/late-join). This runs synchronously on the
+          // discovery-match event in the event loop, so it
+          // does NOT depend on the periodic heartbeat timer - which is
+          // CPU-starved under a flat-out user writer, leaving the
+          // timer to fire seldom or never. Without this prompt, a
+          // reader that matches after our initial send burst is never
+          // told what we have and never NACKs, so reliable
           // data (notably builtin SEDP DiscoveredWriterData) is never delivered
           // and the endpoints stay unmatched. Unicast to just the new reader.
           if self.is_reliable() && !self.like_stateless {
@@ -1948,8 +1971,9 @@ impl Writer {
   // return value: true = reader was new, false = reader was previously known
   fn matched_reader_update(&mut self, updated_reader_proxy: &RtpsReaderProxy) -> bool {
     let mut is_new = false;
-    let is_volatile = self.qos().is_volatile(); // Get this in advance to work with the borrow checker
-                                                // Capture the interface set once; resolution consults current observations.
+    // Get this in advance to work with the borrow checker
+    let is_volatile = self.qos().is_volatile();
+    // Capture the interface set once; resolution consults current observations.
     let multicast_ifaces = self.udp_sender.multicast_interfaces();
     let selector = DefaultRouteSelector::new(self.prefer_loopback_same_host);
     self
@@ -1970,12 +1994,14 @@ impl Writer {
         is_new = true;
         let mut new_proxy = updated_reader_proxy.clone();
         // Ensure loopback stays in the gated bucket even for proxies that
-        // arrive with it inline (e.g. the built-in get_builtin_reader_proxy path).
+        // arrive with it inline (e.g. the built-in get_builtin_reader_proxy
+        // path).
         new_proxy.normalize_loopback();
         if is_volatile {
-          // With Durabilty::Volatile QoS we won't send the sequence numbers which existed
-          // before matching with this reader. Therefore we set the reader as pending GAP
-          // for all existing sequence numbers
+          // With Durabilty::Volatile QoS we won't send the sequence numbers
+          // which existed before matching with this reader. Therefore
+          // we set the reader as pending GAP for all existing
+          // sequence numbers
           new_proxy.set_pending_gap_up_to(self.send_buffer.last_change_sequence_number());
         }
         new_proxy.resolve_send_route(
@@ -2060,8 +2086,9 @@ impl Writer {
         reader: guid,
       });
     }
-    // A matched reader going away may complete a pending wait_for_acknowledgments
-    // and may relax back-pressure: recompute the acknowledgement frontier.
+    // A matched reader going away may complete a pending
+    // wait_for_acknowledgments and may relax back-pressure: recompute the
+    // acknowledgement frontier.
     self.refresh_acked_frontier();
   }
 
@@ -2174,9 +2201,9 @@ struct FragmentationIter<'a> {
 impl<'a> FragmentationIter<'a> {
   // nonblocking-transmit: build an iterator that resumes at `cursor`. `Fresh`
   // yields everything (leading GAP for a single reader, all DATAFRAGs, trailing
-  // HEARTBEAT, or a single DATA for an unfragmented sample). `Frag(n)` skips the
-  // GAP and earlier fragments and resumes at fragment `n`. `Heartbeat` yields
-  // only the trailing HEARTBEAT.
+  // HEARTBEAT, or a single DATA for an unfragmented sample). `Frag(n)` skips
+  // the GAP and earlier fragments and resumes at fragment `n`. `Heartbeat`
+  // yields only the trailing HEARTBEAT.
   fn new_resume(
     writer: &'a Writer,
     cache_change: &'a CacheChange,
@@ -2272,7 +2299,8 @@ impl<'a> Iterator for FragmentationIter<'a> {
               fragment_size,
             };
 
-            // If sending to a single reader, add a GAP message with pending gaps if any
+            // If sending to a single reader, add a GAP message with pending
+            // gaps if any
             if let Some(reader) = target_reader_opt {
               if !reader.get_pending_gap().is_empty() {
                 let gap_msg = MessageBuilder::new()
@@ -2284,7 +2312,8 @@ impl<'a> Iterator for FragmentationIter<'a> {
                     reader.remote_reader_guid,
                   )
                   .add_header_and_build(writer.my_guid.prefix);
-                // Leading GAP: if it blocks, resume from Fresh (re-send GAP too).
+                // Leading GAP: if it blocks, resume from Fresh (re-send GAP
+                // too).
                 return Some((SampleCursor::Fresh, gap_msg));
               }
             }
@@ -2315,13 +2344,13 @@ impl<'a> Iterator for FragmentationIter<'a> {
               }
 
               // Per-peer datagram budget: the destination reader's path-MTU
-              // budget for a directed send, or the writer-wide minimum (over all
-              // matched readers) for a multicast-to-all send.
+              // budget for a directed send, or the writer-wide minimum (over
+              // all matched readers) for a multicast-to-all send.
               let budget = writer.datagram_budget(target_reader_opt);
               // How many contiguous fragments (starting at `start`) fit in one
-              // DATAFRAG submessage within the remaining datagram budget. Fragment
-              // *size* is constant (RTPS rule); only the *count* per submessage
-              // adapts to the path MTU.
+              // DATAFRAG submessage within the remaining datagram budget.
+              // Fragment *size* is constant (RTPS rule); only the
+              // *count* per submessage adapts to the path MTU.
               let k = frags_per_datafrag(
                 message_builder.len_serialized(),
                 budget,
@@ -2353,8 +2382,9 @@ impl<'a> Iterator for FragmentationIter<'a> {
 
               *next = start + k;
               let datafrag_msg = message_builder.add_header_and_build(writer.my_guid.prefix);
-              // If this datagram blocks, resume from its first fragment next time
-              // (the same K is recomputed deterministically).
+              // If this datagram blocks, resume from its first fragment next
+              // time (the same K is recomputed
+              // deterministically).
               return Some((SampleCursor::Frag(FragmentNumber::new(start)), datafrag_msg));
             }
             *state = FragmentedState::Heartbeat;
@@ -2365,9 +2395,11 @@ impl<'a> Iterator for FragmentationIter<'a> {
 
             // Add HEARTBEAT message if needed
             if send_heartbeat && !writer.like_stateless {
-              let final_flag = false; // false = request that readers acknowledge with ACKNACK.
-              let liveliness_flag = false; // This is not a manual liveliness assertion (DDS API call), but side-effect of
-                                           // writing new data.
+              // false = request that readers acknowledge with ACKNACK.
+              let final_flag = false;
+              // This is not a manual liveliness assertion (DDS API call), but
+              // side-effect of writing new data.
+              let liveliness_flag = false;
               let hb_msg = MessageBuilder::new()
                 .heartbeat_msg(
                   writer.entity_id(), // from Writer
@@ -2424,9 +2456,11 @@ impl<'a> Iterator for FragmentationIter<'a> {
 
         // Add HEARTBEAT if needed
         if send_heartbeat && !writer.like_stateless {
-          let final_flag = false; // false = request that readers acknowledge with ACKNACK.
-          let liveliness_flag = false; // This is not a manual liveliness assertion (DDS API call), but side-effect of
-                                       // writing new data.
+          // false = request that readers acknowledge with ACKNACK.
+          let final_flag = false;
+          // This is not a manual liveliness assertion (DDS API call), but
+          // side-effect of writing new data.
+          let liveliness_flag = false;
           message_builder = message_builder.heartbeat_msg(
             writer.entity_id(),
             writer.send_buffer.first_change_sequence_number(),
@@ -2461,9 +2495,10 @@ mod tests {
 
   use super::frags_per_datafrag;
 
-  // At a 1500-byte-MTU budget, a two-fragment "1 KB" sample (its serialized form
-  // is slightly over the 1024-byte fragment size) packs BOTH fragments into one
-  // DATAFRAG submessage, so it goes out in a single datagram instead of two.
+  // At a 1500-byte-MTU budget, a two-fragment "1 KB" sample (its serialized
+  // form is slightly over the 1024-byte fragment size) packs BOTH fragments
+  // into one DATAFRAG submessage, so it goes out in a single datagram instead
+  // of two.
   #[test]
   fn small_mtu_packs_1k_sample_into_one_datafrag() {
     // header_len 20 (RTPS header only), budget 1452, fragment size 1024,

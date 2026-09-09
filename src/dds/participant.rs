@@ -353,9 +353,11 @@ impl DomainParticipantBuilder {
         }
       })?;
 
-    djh_sender.send(discovery_handle).unwrap_or(()); // send join handle to inner participant
+    djh_sender.send(discovery_handle).unwrap_or(()); // send join handle to
+                                                     // inner participant
 
-    debug!("Waiting for discovery to start"); // blocking until discovery answers
+    debug!("Waiting for discovery to start"); // blocking until discovery
+                                              // answers
     match discovery_started_receiver.recv_timeout(Duration::from_secs(10)) {
       Ok(Ok(())) => {
         // normal case
@@ -1432,12 +1434,12 @@ impl DomainParticipantInner {
     ))
   }
 
-  // Topic creation. Data types should be handled as something (potentially) more
-  // structured than a String. NOTE: Here we are using &str for topic name. &str
-  // is Unicode string, whereas DDS specifies topic name to be a sequence of
-  // octets, which would be &[u8] in Rust. This may cause problems if there are
-  // topic names with non-ASCII characters. On the other hand, string handling
-  // with &str is easier in Rust.
+  // Topic creation. Data types should be handled as something (potentially)
+  // more structured than a String. NOTE: Here we are using &str for topic
+  // name. &str is Unicode string, whereas DDS specifies topic name to be a
+  // sequence of octets, which would be &[u8] in Rust. This may cause problems
+  // if there are topic names with non-ASCII characters. On the other hand,
+  // string handling with &str is easier in Rust.
   pub fn create_topic(
     &self,
     domain_participant_weak: &DomainParticipantWeak,
@@ -1503,8 +1505,8 @@ impl DomainParticipantInner {
 
     let poll = mio::Poll::new()?;
     let mut events = mio::Events::with_capacity(1);
-    // Should be register before the check and use level trigger to avoid missing
-    // event
+    // Should be register before the check and use level trigger to avoid
+    // missing event
     poll.register(
       &self.discovery_db_event_receiver,
       mio_06::Token(0),

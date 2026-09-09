@@ -295,7 +295,8 @@ impl UDPSender {
         None
       }
       Locator::Other { kind, .. } => {
-        // Normal: other implementations define their own kinds (from Discovery).
+        // Normal: other implementations define their own kinds (from
+        // Discovery).
         trace!("{ctx}: Unknown LocatorKind: {kind:?}");
         None
       }

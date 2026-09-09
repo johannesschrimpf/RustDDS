@@ -308,8 +308,8 @@ impl DiscoveryDB {
     let inow = Instant::now();
 
     let mut to_remove = Vec::new();
-    // TODO: We are not cleaning up liast_life_signs table, but that should not be a
-    // problem, except for a slight memory leak.
+    // TODO: We are not cleaning up liast_life_signs table, but that should not
+    // be a problem, except for a slight memory leak.
     for (&guid, sp) in &self.participant_proxies {
       let lease_duration = sp
         .lease_duration
@@ -424,8 +424,8 @@ impl DiscoveryDB {
   pub fn update_subscription(&mut self, data: &DiscoveredReaderData) -> DiscoveredReaderData {
     let guid = data.reader_proxy.remote_reader_guid;
 
-    // fill in the default locators from participant, in case DRD did not provide
-    // any
+    // fill in the default locators from participant, in case DRD did not
+    // provide any
     let default_locator_lists = self
       .find_participant_proxy(guid.prefix)
       .map(|pp| {
@@ -448,8 +448,9 @@ impl DiscoveryDB {
         (Vec::default(), Vec::default())
       });
 
-    // Build enriched data with participant's default locators filled in, so that
-    // later lookups via readers_on_topic() return usable locator information.
+    // Build enriched data with participant's default locators filled in, so
+    // that later lookups via readers_on_topic() return usable locator
+    // information.
     let enriched = DiscoveredReaderData {
       reader_proxy: ReaderProxy::from(RtpsReaderProxy::from_discovered_reader_data(
         data,
@@ -470,9 +471,9 @@ impl DiscoveryDB {
       DiscoveredVia::Subscription,
     );
 
-    // TODO: Lookup the topic in DB, data sent by the same participant that sent the
-    // reader update. If there is a DiscoveredVia::Topic record, use QosPolicies
-    // from that record and modify by QoS given in the DRD.
+    // TODO: Lookup the topic in DB, data sent by the same participant that sent
+    // the reader update. If there is a DiscoveredVia::Topic record, use
+    // QosPolicies from that record and modify by QoS given in the DRD.
 
     enriched
   }
@@ -481,8 +482,8 @@ impl DiscoveryDB {
   pub fn update_publication(&mut self, data: &DiscoveredWriterData) -> DiscoveredWriterData {
     let guid = data.writer_proxy.remote_writer_guid;
 
-    // fill in the default locators from participant, in case DRD did not provide
-    // any
+    // fill in the default locators from participant, in case DRD did not
+    // provide any
     let default_locator_lists = self
       .find_participant_proxy(guid.prefix)
       .map(|pp| {
@@ -505,8 +506,9 @@ impl DiscoveryDB {
         (Vec::default(), Vec::default())
       });
 
-    // Build enriched data with participant's default locators filled in, so that
-    // later lookups via writers_on_topic() return usable locator information.
+    // Build enriched data with participant's default locators filled in, so
+    // that later lookups via writers_on_topic() return usable locator
+    // information.
     let enriched = DiscoveredWriterData {
       writer_proxy: WriterProxy::from(RtpsWriterProxy::from_discovered_writer_data(
         data,
@@ -562,9 +564,9 @@ impl DiscoveryDB {
       if let Some(old_dtd) = t.get_mut(&updater) {
         // already have it from the same source, do some checking(?) and merging
         if !topics_inconsistent(&dtd.topic_data, &old_dtd.1.topic_data) {
-          // If this discovery was from Topic topic and the old was not, then update
-          // TODO: Why do we have this logic? Where is the spec? Or ant reason for it?
-          // Is it even triggered ever?
+          // If this discovery was from Topic topic and the old was not, then
+          // update TODO: Why do we have this logic? Where is the
+          // spec? Or ant reason for it? Is it even triggered ever?
           if discovered_via == DiscoveredVia::Topic {
             *old_dtd = (discovered_via, dtd.clone()); // update QoS
             notify = true;
@@ -608,7 +610,8 @@ impl DiscoveryDB {
         }
         // We have to topic, but not from this participant
         // TODO: Check that there is agreement about topic type name (at least)
-        t.insert(updater, (discovered_via, dtd.clone())); // this should return None
+        t.insert(updater, (discovered_via, dtd.clone())); // this should return
+                                                          // None
         notify = true;
       }
     } else {
@@ -1120,7 +1123,8 @@ mod tests {
       mio_extras::channel::sync_channel::<ReaderCommand>(100);
 
     let mut guid2 = GUID::dummy_test_guid(EntityKind::READER_NO_KEY_USER_DEFINED);
-    guid2.prefix = GuidPrefix::new(b"Another fake"); // GUID needs to be different in order to be added
+    // GUID needs to be different in order to be added
+    guid2.prefix = GuidPrefix::new(b"Another fake");
 
     let reader2_ing = ReaderIngredients {
       guid: guid2,

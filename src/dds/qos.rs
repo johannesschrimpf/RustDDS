@@ -343,7 +343,8 @@ impl QosPolicies {
   /// Constructs a QosPolicy, where each policy is taken from `self`,
   /// and overwritten with those policies from `other` that are defined.
   #[must_use]
-  // TODO: Make this "const" when support for const .or() arrives in stable Rust.
+  // TODO: Make this "const" when support for const .or() arrives in stable
+  // Rust.
   pub fn modify_by(&self, other: &Self) -> Self {
     Self {
       durability: other.durability.or(self.durability),
@@ -455,11 +456,12 @@ impl QosPolicies {
     }
 
     // check Ownership: offered kind == requested kind. Default: SHARED.
-    // Only the KIND (SHARED vs EXCLUSIVE) affects compatibility. OWNERSHIP_STRENGTH
-    // is a writer-only policy (DDS spec v1.4 §2.2.3.10) that selects which writer's
-    // sample is delivered for EXCLUSIVE ownership; it must NOT be compared for
-    // matching, otherwise two EXCLUSIVE endpoints with differing strengths would
-    // be wrongly reported INCOMPATIBLE_QOS.
+    // Only the KIND (SHARED vs EXCLUSIVE) affects compatibility.
+    // OWNERSHIP_STRENGTH is a writer-only policy (DDS spec v1.4 §2.2.3.10)
+    // that selects which writer's sample is delivered for EXCLUSIVE
+    // ownership; it must NOT be compared for matching, otherwise two
+    // EXCLUSIVE endpoints with differing strengths would be wrongly
+    // reported INCOMPATIBLE_QOS.
     {
       let off = self.ownership.unwrap_or(policy::Ownership::Shared);
       let req = other.ownership.unwrap_or(policy::Ownership::Shared);
@@ -526,10 +528,11 @@ impl QosPolicies {
     }
 
     // check Data Representation (DDS-XTypes v1.3 Section 7.6.3.1.1):
-    // the writer (offered = self) uses a single representation (first element of
-    // its list, or XCDR1 if absent/empty); it is compatible with the reader
-    // (requested = other) only if that representation is contained in the
-    // reader's accepted list (or [XCDR1] if the reader's is absent/empty).
+    // the writer (offered = self) uses a single representation (first element
+    // of its list, or XCDR1 if absent/empty); it is compatible with the
+    // reader (requested = other) only if that representation is contained
+    // in the reader's accepted list (or [XCDR1] if the reader's is
+    // absent/empty).
     {
       let offered =
         policy::DataRepresentation::offered_representation(self.data_representation.as_ref());
@@ -720,7 +723,8 @@ impl QosPolicies {
       get_option!(PID_DATA_REPRESENTATION);
 
     #[cfg(feature = "security")]
-    let property: Option<policy::Property> = None; // TODO: Should also properties be read?
+    let property: Option<policy::Property> = None; // TODO: Should also
+                                                   // properties be read?
 
     // We construct using the struct syntax directly rather than the builder,
     // so we cannot forget any field.
@@ -1135,8 +1139,9 @@ pub mod policy {
         value.push(s);
       }
 
-      // Depending on the RTPS version used by writer, PropertyQoSPolicy may end here,
-      // i.e. there is no "binary_value". Pad should still always exist.
+      // Depending on the RTPS version used by writer, PropertyQoSPolicy may end
+      // here, i.e. there is no "binary_value". Pad should still always
+      // exist.
       read_pad(reader, prev_len, 4)?;
       let mut binary_value = Vec::new();
 
@@ -1169,8 +1174,8 @@ pub mod policy {
 
   // Writing several strings is a bit complicated, because
   // we have to keep track of alignment.
-  // Again, alignment comes BEFORE string length, or vector item count, not after
-  // string.
+  // Again, alignment comes BEFORE string length, or vector item count, not
+  // after string.
   #[cfg(feature = "security")]
   impl<C: Context> Writable<C> for Property {
     fn write_to<T: ?Sized + Writer<C>>(&self, writer: &mut T) -> Result<(), C::Error> {
@@ -1244,8 +1249,8 @@ pub mod policy {
 
   // Writing several strings is a bit complicated, because
   // we have to keep track of alignment.
-  // Again, alignment comes BEFORE string length, or vector item count, not after
-  // string.
+  // Again, alignment comes BEFORE string length, or vector item count, not
+  // after string.
   #[cfg(feature = "security")]
   impl<C: Context> Writable<C> for DataTag {
     fn write_to<T: ?Sized + Writer<C>>(&self, writer: &mut T) -> Result<(), C::Error> {

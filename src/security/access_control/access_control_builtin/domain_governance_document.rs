@@ -18,8 +18,8 @@ impl DomainGovernanceDocument {
   // Find an applicable rule for domain according to
   // Section "9.4.1.2.7 Application of Domain and Topic Rules"
   //
-  // If no rule is found (None), then the operation being attempted must fail with
-  // a permissions error.
+  // If no rule is found (None), then the operation being attempted must fail
+  // with a permissions error.
   pub fn find_rule(&self, domain_id: u16) -> Option<&DomainRule> {
     self.domain_access_rules.iter().find(|dr| {
       dr.domains

@@ -37,8 +37,8 @@ pub(super) fn validate_receiver_specific_mac(
   {
     if let Some(receiver_specific_mac) = find_receiver_specific_mac(key_id, receiver_specific_macs)
     {
-      // The receiver-specific MAC is computed for common_mac, not the  ciphertext.
-      // See 9.5.3.3.4
+      // The receiver-specific MAC is computed for common_mac, not the
+      // ciphertext. See 9.5.3.3.4
       validate_mac(
         key,
         *initialization_vector,

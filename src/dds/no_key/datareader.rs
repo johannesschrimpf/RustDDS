@@ -258,8 +258,8 @@ where
   /// }
   /// ```
   pub fn iterator(&mut self) -> ReadResult<impl Iterator<Item = &D>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(
       self
         .read(usize::MAX, ReadCondition::not_read())?
@@ -298,8 +298,8 @@ where
     &mut self,
     read_condition: ReadCondition,
   ) -> ReadResult<impl Iterator<Item = &D>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(
       self
         .read(usize::MAX, read_condition)?
@@ -338,8 +338,8 @@ where
   /// }
   /// ```
   pub fn into_iterator(&mut self) -> ReadResult<impl Iterator<Item = D>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(
       self
         .take(usize::MAX, ReadCondition::not_read())?
@@ -380,8 +380,8 @@ where
     &mut self,
     read_condition: ReadCondition,
   ) -> ReadResult<impl Iterator<Item = D>> {
-    // TODO: We could come up with a more efficient implementation than wrapping a
-    // read call
+    // TODO: We could come up with a more efficient implementation than wrapping
+    // a read call
     Ok(
       self
         .take(usize::MAX, read_condition)?

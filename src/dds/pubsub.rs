@@ -285,8 +285,8 @@ impl Publisher {
   // has created.
 
   // Suspend and resume publications are performance optimization methods.
-  // The minimal correct implementation is to do nothing. See DDS spec 2.2.2.4.1.8
-  // and .9
+  // The minimal correct implementation is to do nothing. See DDS spec
+  // 2.2.2.4.1.8 and .9
   /// Placeholder only — not implemented. **Will panic if called.**
   ///
   /// # Panics
@@ -445,10 +445,12 @@ impl InnerPublisher {
     discovery_command: mio_channel::SyncSender<DiscoveryCommand>,
     security_plugins_handle: Option<SecurityPluginsHandle>,
   ) -> Self {
-    // We generate an arbitrary but unique id to distinguish Publishers from each
-    // other. EntityKind is just some value, since we do not show it to anyone.
+    // We generate an arbitrary but unique id to distinguish Publishers from
+    // each other. EntityKind is just some value, since we do not show it to
+    // anyone.
     let id = EntityId::MAX;
-    // dp.clone().upgrade().unwrap().new_entity_id(EntityKind::UNKNOWN_BUILT_IN);
+    // dp.clone().upgrade().unwrap().
+    // new_entity_id(EntityKind::UNKNOWN_BUILT_IN);
 
     Self {
       id,
@@ -483,8 +485,8 @@ impl InnerPublisher {
     // QoS, modify it to match any QoS settings (that are set) in the
     // Topic QoS and use that.
 
-    // Use Publisher QoS as basis, modify by Topic settings, and modify by specified
-    // QoS.
+    // Use Publisher QoS as basis, modify by Topic settings, and modify by
+    // specified QoS.
     let writer_qos = self
       .default_datawriter_qos
       .modify_by(&topic.qos())
@@ -523,9 +525,10 @@ impl InnerPublisher {
     // samples may await transmission when the network socket is congested. We
     // reuse the same capacity as the reliable window.
     let backlog_limit = window_limit;
-    // KeepLast-style hard cap on retained samples for best-effort (non-blocking)
-    // writes, which are not throttled at admission, and for reliable writers
-    // before a reader matches. This is where the History depth applies.
+    // KeepLast-style hard cap on retained samples for best-effort
+    // (non-blocking) writes, which are not throttled at admission, and for
+    // reliable writers before a reader matches. This is where the History
+    // depth applies.
     let max_retain = match writer_qos.history() {
       Some(policy::History::KeepLast { depth }) => {
         let d = (depth as usize).max(1);
@@ -552,9 +555,9 @@ impl InnerPublisher {
       backlog_limit,
       max_retain,
     );
-    // mio readiness "doorbell": the DataWriter rings `doorbell` after admitting a
-    // sample; the event loop registers `doorbell_registration` under the writer's
-    // entity token and wakes to transmit.
+    // mio readiness "doorbell": the DataWriter rings `doorbell` after admitting
+    // a sample; the event loop registers `doorbell_registration` under the
+    // writer's entity token and wakes to transmit.
     let (doorbell_registration, doorbell) = mio_06::Registration::new2();
 
     #[cfg(feature = "security")]
@@ -662,8 +665,8 @@ impl InnerPublisher {
     if let Err(e) = self.discovery_command.try_send(DiscoveryCommand::AddTopic {
       topic_name: topic.name(),
     }) {
-      // Log the error but don't quit, failing to inform Discovery about the topic
-      // shouldn't be that serious
+      // Log the error but don't quit, failing to inform Discovery about the
+      // topic shouldn't be that serious
       error!(
         "Failed send DiscoveryCommand::AddTopic about topic {}: {}",
         topic.name(),
@@ -672,8 +675,8 @@ impl InnerPublisher {
     }
 
     // Note: notifying Discovery about the new writer is no longer done here.
-    // Instead, it's done by the DP event loop once it has actually created the new
-    // writer. This is done to avoid data races.
+    // Instead, it's done by the DP event loop once it has actually created the
+    // new writer. This is done to avoid data races.
 
     // Send writer ingredients to DP event loop, where the actual writer will be
     // constructed
@@ -1247,8 +1250,8 @@ impl InnerSubscriber {
       if let Err(e) = self.discovery_command.try_send(DiscoveryCommand::AddTopic {
         topic_name: topic.name(),
       }) {
-        // Log the error but don't quit, failing to inform Discovery about the topic
-        // shouldn't be that serious
+        // Log the error but don't quit, failing to inform Discovery about the
+        // topic shouldn't be that serious
         error!(
           "Failed send DiscoveryCommand::AddTopic about topic {}: {}",
           topic.name(),
@@ -1258,8 +1261,8 @@ impl InnerSubscriber {
     }
 
     // Note: notifying Discovery about the new reader is no longer done here.
-    // Instead, it's done by the DP event loop once it has actually created the new
-    // reader. This is done to avoid data races.
+    // Instead, it's done by the DP event loop once it has actually created the
+    // new reader. This is done to avoid data races.
 
     // Construct the data reader
     let datareader = with_key::SimpleDataReader::<D, SA>::new(
