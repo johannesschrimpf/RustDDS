@@ -10,7 +10,9 @@ use log::{debug, error, trace, warn};
 
 use crate::{
   dds::{ddsdata::DDSData, with_key::datawriter::WriteOptions},
-  structure::{cache_change::CacheChange, guid::GUID, sequence_number::SequenceNumber},
+  structure::{
+    cache_change::CacheChange, guid::GUID, sequence_number::SequenceNumber, time::Timestamp,
+  },
 };
 
 /// Result of an admission attempt into the [`WriterSendBuffer`].
@@ -267,6 +269,21 @@ impl WriterSendBuffer {
     may_block: bool,
   ) -> SequenceNumber {
     let seq = inner.last_seq.plus_1();
+    // A sample written without a source timestamp gets the admission time, as
+    // DDS `write` does (only `write_w_timestamp` takes one from the
+    // application). The Writer sends INFO_TS only for samples that have one,
+    // and Discovery writes all of its SEDP and participant-message samples
+    // with `None`. Without INFO_TS, Fast DDS gives the received sample source
+    // time 0. Its reader history orders samples by sequence number within one
+    // writer and by source time across writers, so samples of two writers
+    // that both sent no INFO_TS compare equal. A late-arriving sample can
+    // then be inserted after a later sequence number of its own writer. The
+    // in-order notification stops at that later sample, marks the skipped
+    // ones as notified, and never delivers them: with Fast DDS 2.14 a remote
+    // SEDP announcement is lost for good and the endpoint never matches.
+    // Taking the time here, under the buffer lock, keeps the timestamps of
+    // one writer in sequence-number order (unless the clock steps back).
+    let write_options = write_options.with_source_timestamp_or(Timestamp::now);
     let cc = CacheChange::new(shared.writer_guid, seq, write_options, data);
     inner.changes.insert(seq, cc);
     inner.last_seq = seq;
@@ -462,6 +479,51 @@ mod tests {
     WriteOptionsBuilder::new()
       .best_effort_may_block(true)
       .build()
+  }
+
+  // A sample written without a source timestamp gets the admission time, in
+  // sequence-number order; a timestamp the caller gave is kept. Discovery
+  // writes everything with `None`, and without a timestamp the Writer sends no
+  // INFO_TS, which loses SEDP announcements in Fast DDS (see `insert_locked`).
+  #[test]
+  fn admission_stamps_samples_written_without_a_timestamp() {
+    let buf = WriterSendBuffer::new(
+      GUID::GUID_UNKNOWN,
+      "DCPSPublication".to_string(),
+      /* reliable_writer */ true,
+      /* is_builtin */ true,
+      /* volatile */ false,
+      /* window_limit */ 1000,
+      /* backlog_limit */ 1000,
+      /* max_retain */ 1000,
+    );
+    let before = Timestamp::now();
+    for _ in 0..3 {
+      assert!(admit_now(&buf, WriteOptions::from(None)));
+    }
+    let given = before - crate::Duration::from_secs(60);
+    assert!(admit_now(&buf, WriteOptions::from(Some(given))));
+    let after = Timestamp::now();
+
+    let stamp = |sn: i64| {
+      buf
+        .get_by_sn(SequenceNumber::new(sn))
+        .expect("admitted sample")
+        .write_options
+        .source_timestamp()
+    };
+    let stamped: Vec<Timestamp> = (1..=3)
+      .map(|sn| stamp(sn).expect("sample written with None has a source timestamp"))
+      .collect();
+    assert!(
+      before <= stamped[0] && stamped[2] <= after,
+      "{stamped:?} not within [{before:?}, {after:?}]"
+    );
+    assert!(
+      stamped.windows(2).all(|w| w[0] <= w[1]),
+      "not in sequence-number order: {stamped:?}"
+    );
+    assert_eq!(stamp(4), Some(given));
   }
 
   // nonblocking-transmit: a best-effort writer that opted in via
