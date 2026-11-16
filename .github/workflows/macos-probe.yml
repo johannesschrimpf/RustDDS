@@ -1,0 +1,29 @@
+# Temporary: which macOS runners can run the multicast tests? Not for upstream.
+name: macOS runner probe
+
+on:
+  push:
+    branches: [ci/macos-probe]
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+        mode: [user, root]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sw_vers && id
+      - run: cargo test --no-run
+      - name: cargo test as the runner user
+        if: matrix.mode == 'user'
+        run: cargo test -- --test-threads=1
+      - name: cargo test as root
+        if: matrix.mode == 'root'
+        run: sudo env "PATH=$PATH" "HOME=$HOME" cargo test -- --test-threads=1
