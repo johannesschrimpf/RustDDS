@@ -22,12 +22,15 @@ use rustdds::{policy, DomainParticipant, QosPolicyBuilder, TopicKind};
 use serde::{Deserialize, Serialize};
 use socket2::{Domain, Protocol, Socket, Type};
 
+mod common;
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Ping {
   seq: u32,
 }
 
-const DOMAIN_ID: u16 = 53;
+/// This test's offset from `RUSTDDS_TEST_DOMAIN_ID`: a domain of its own.
+const DOMAIN_OFFSET: u16 = 50;
 const SEDP_PUBLICATIONS_WRITER: [u8; 4] = [0x00, 0x00, 0x03, 0xc2];
 
 /// The discovery multicast port of a domain (RTPS 9.6.1.1: PB + DG * domain).
@@ -90,11 +93,12 @@ fn sedp_publication_data(datagram: &[u8]) -> Vec<bool> {
 
 #[test]
 fn sedp_announcements_carry_a_source_timestamp() {
-  let listener = multicast_listener(spdp_multicast_port(DOMAIN_ID));
+  let domain_id = common::test_domain_id(DOMAIN_OFFSET);
+  let listener = multicast_listener(spdp_multicast_port(domain_id));
 
   // Two participants, so that each has a remote SEDP reader to announce to.
-  let announcer = DomainParticipant::new(DOMAIN_ID).unwrap();
-  let _peer = DomainParticipant::new(DOMAIN_ID).unwrap();
+  let announcer = DomainParticipant::new(domain_id).unwrap();
+  let _peer = DomainParticipant::new(domain_id).unwrap();
 
   let qos = QosPolicyBuilder::new()
     .reliability(policy::Reliability::Reliable {
