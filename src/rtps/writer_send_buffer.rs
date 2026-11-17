@@ -270,19 +270,10 @@ impl WriterSendBuffer {
   ) -> SequenceNumber {
     let seq = inner.last_seq.plus_1();
     // A sample written without a source timestamp gets the admission time, as
-    // DDS `write` does (only `write_w_timestamp` takes one from the
-    // application). The Writer sends INFO_TS only for samples that have one,
-    // and Discovery writes all of its SEDP and participant-message samples
-    // with `None`. Without INFO_TS, Fast DDS gives the received sample source
-    // time 0. Its reader history orders samples by sequence number within one
-    // writer and by source time across writers, so samples of two writers
-    // that both sent no INFO_TS compare equal. A late-arriving sample can
-    // then be inserted after a later sequence number of its own writer. The
-    // in-order notification stops at that later sample, marks the skipped
-    // ones as notified, and never delivers them: with Fast DDS 2.14 a remote
-    // SEDP announcement is lost for good and the endpoint never matches.
-    // Taking the time here, under the buffer lock, keeps the timestamps of
-    // one writer in sequence-number order (unless the clock steps back).
+    // DDS `write` does. Without one it is sent without INFO_TS, and Fast DDS,
+    // which orders its reader history by source time across writers, can lose
+    // it (seen with SEDP). Taken under the buffer lock, where the SN is
+    // assigned, generated timestamps follow the SNs unless the clock steps back.
     let write_options = write_options.with_source_timestamp_or(Timestamp::now);
     let cc = CacheChange::new(shared.writer_guid, seq, write_options, data);
     inner.changes.insert(seq, cc);
