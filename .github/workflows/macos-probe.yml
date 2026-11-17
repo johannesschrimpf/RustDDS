@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, macos-26-intel]
+        os: [macos-26]
         mode: [user, root]
     runs-on: ${{ matrix.os }}
     steps:
