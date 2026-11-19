@@ -1413,6 +1413,7 @@ mod tests {
         guid: new_guid,
         notification_sender,
         status_sender,
+        matched_counts: Default::default(),
         topic_cache_handle: topic_cache.clone(),
         topic_name: "test".to_string(),
         like_stateless: false,
@@ -1584,6 +1585,7 @@ mod tests {
       like_stateless: false,
       qos_policies: Discovery::PARTICIPANT_MESSAGE_QOS,
       status_sender,
+      matched_counts: Default::default(),
       security_plugins: None,
     });
 
